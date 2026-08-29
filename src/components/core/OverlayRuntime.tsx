@@ -1,9 +1,9 @@
-import { alertQueue } from "#/lib/AlertQueue";
-import { audioManager } from "#/lib/AudioManager";
+import { alertQueue } from "@overlay/alert-engine";
+import { audioManager } from "@overlay/audio-engine";
 import { useEffect, useState } from "react";
-import type { AlertTheme } from "../alerts/AlertRenderer";
-import AlertEngine from "./AlertEngine";
-import type { AlertDefinition } from "./types";
+import type { AlertTheme } from "@overlay/alert-engine";
+import { AlertEngine } from "@overlay/alert-engine";
+import type { AlertDefinition } from "@overlay/alert-engine";
 
 interface OverlayRuntimeProps {
   isPreview?: boolean;
