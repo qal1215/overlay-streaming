@@ -46,7 +46,26 @@ export class AudioManager {
 
     const buffer = this.cache.get(id);
     if (!buffer) {
-      console.warn(`[AudioManager] Sound not preloaded: ${id}`);
+      console.warn(`[AudioManager] Sound not preloaded: ${id}. Playing synthetic beep for testing.`);
+      // Synthetic fallback for testing
+      try {
+        const oscillator = this.context.createOscillator();
+        const gainNode = this.context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, this.context.currentTime); // A4 note
+        oscillator.frequency.exponentialRampToValueAtTime(880, this.context.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(volume, this.context.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.5);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.context.destination);
+        
+        oscillator.start();
+        oscillator.stop(this.context.currentTime + 0.5);
+      } catch (e) {
+        console.error("Synthetic beep failed", e);
+      }
       return;
     }
 

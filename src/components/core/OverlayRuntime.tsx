@@ -13,6 +13,17 @@ export default function OverlayRuntime({
   isPreview = false,
 }: OverlayRuntimeProps) {
   const [initialized, setInitialized] = useState(false);
+  const [queueState, setQueueState] = useState<AlertDefinition[]>([]);
+
+  useEffect(() => {
+    if (isPreview) {
+      setQueueState(alertQueue.getQueue());
+      const unsubscribe = alertQueue.subscribe((newQueue) => {
+        setQueueState(newQueue);
+      });
+      return unsubscribe;
+    }
+  }, [isPreview]);
 
   // Auto-initialize audio manager on first interaction (required by OBS/browsers)
   useEffect(() => {
@@ -148,6 +159,25 @@ export default function OverlayRuntime({
           <p className="mt-4 text-xs text-gray-400">
             URL config: ?preview=false to use in OBS.
           </p>
+        </div>
+      )}
+
+      {/* Queue Visualizer (Preview Only) */}
+      {isPreview && (
+        <div className="absolute right-4 top-4 z-[9999] w-64 rounded-xl border border-white/10 bg-black/80 p-6 text-white shadow-2xl backdrop-blur-md">
+          <h2 className="mb-4 text-xl font-bold">Alert Queue</h2>
+          <div className="flex flex-col gap-2">
+            {queueState.length === 0 ? (
+              <div className="text-sm text-gray-500 italic">Queue is empty</div>
+            ) : (
+              queueState.map((alert, index) => (
+                <div key={alert.id} className="flex items-center gap-2 rounded bg-white/10 p-2 text-sm">
+                  <span className="font-mono text-gray-400">#{index + 1}</span>
+                  <span className="font-semibold capitalize text-emerald-400">{alert.preset.theme}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 

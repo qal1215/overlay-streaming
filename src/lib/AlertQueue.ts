@@ -4,6 +4,22 @@ export class AlertQueue {
   private queue: AlertDefinition[] = [];
   private playing = false;
   private processCallback?: (event: AlertDefinition) => Promise<void>;
+  private subscribers: ((queue: AlertDefinition[]) => void)[] = [];
+
+  public subscribe(callback: (queue: AlertDefinition[]) => void) {
+    this.subscribers.push(callback);
+    return () => {
+      this.subscribers = this.subscribers.filter(cb => cb !== callback);
+    };
+  }
+
+  private notify() {
+    this.subscribers.forEach(cb => cb([...this.queue]));
+  }
+
+  public getQueue() {
+    return [...this.queue];
+  }
 
   /**
    * Set the handler that processes each alert in the queue.
@@ -15,6 +31,7 @@ export class AlertQueue {
 
   public async push(event: AlertDefinition) {
     this.queue.push(event);
+    this.notify();
 
     if (!this.playing) {
       await this.process();
@@ -26,6 +43,7 @@ export class AlertQueue {
 
     while (this.queue.length > 0) {
       const event = this.queue.shift();
+      this.notify();
       if (event && this.processCallback) {
         await this.processCallback(event);
       }
