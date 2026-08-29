@@ -1,7 +1,5 @@
-import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { type BaseAlertProps } from "../../types";
-import { audioManager } from "#/lib/AudioManager";
 
 export default function GamingAlert({
   isVisible,
@@ -9,20 +7,7 @@ export default function GamingAlert({
   amount,
   message,
   imageUrl,
-  soundUrl,
-  onComplete,
 }: BaseAlertProps) {
-  useEffect(() => {
-    if (!isVisible) return;
-    const timeoutId = setTimeout(onComplete, 5000);
-    return () => clearTimeout(timeoutId);
-  }, [isVisible, onComplete]);
-
-  useEffect(() => {
-    if (!isVisible || !soundUrl) return;
-    audioManager.play(soundUrl);
-  }, [isVisible, soundUrl]);
-
   return (
     <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
       <AnimatePresence>
@@ -40,9 +25,12 @@ export default function GamingAlert({
               transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
               className="absolute -inset-20 z-0 opacity-40"
               style={{
-                background: "conic-gradient(from 0deg, transparent 0 30deg, #fbbf24 30deg 60deg, transparent 60deg 90deg, #ef4444 90deg 120deg, transparent 120deg 150deg, #3b82f6 150deg 180deg, transparent 180deg 210deg, #fbbf24 210deg 240deg, transparent 240deg 270deg, #ef4444 270deg 300deg, transparent 300deg 330deg, #3b82f6 330deg 360deg)",
-                maskImage: "radial-gradient(circle, black 20%, transparent 70%)",
-                WebkitMaskImage: "radial-gradient(circle, black 20%, transparent 70%)"
+                background:
+                  "conic-gradient(from 0deg, transparent 0 30deg, #fbbf24 30deg 60deg, transparent 60deg 90deg, #ef4444 90deg 120deg, transparent 120deg 150deg, #3b82f6 150deg 180deg, transparent 180deg 210deg, #fbbf24 210deg 240deg, transparent 240deg 270deg, #ef4444 270deg 300deg, transparent 300deg 330deg, #3b82f6 330deg 360deg)",
+                maskImage:
+                  "radial-gradient(circle, black 20%, transparent 70%)",
+                WebkitMaskImage:
+                  "radial-gradient(circle, black 20%, transparent 70%)",
               }}
             />
 
@@ -69,14 +57,14 @@ export default function GamingAlert({
               >
                 {amount}
               </motion.div>
-              
+
               {message && (
                 <div className="mt-2 max-w-sm rounded-lg border-2 border-black bg-white p-3 text-xl font-bold text-black shadow-[4px_4px_0_#000]">
                   "{message}"
                 </div>
               )}
             </div>
-            
+
             {/* Image floating */}
             {imageUrl && (
               <motion.img

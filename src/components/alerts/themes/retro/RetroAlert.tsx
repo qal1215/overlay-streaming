@@ -1,7 +1,5 @@
-import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { type BaseAlertProps } from "../../types";
-import { audioManager } from "#/lib/AudioManager";
 
 export default function RetroAlert({
   isVisible,
@@ -9,20 +7,7 @@ export default function RetroAlert({
   amount,
   message,
   imageUrl,
-  soundUrl,
-  onComplete,
 }: BaseAlertProps) {
-  useEffect(() => {
-    if (!isVisible) return;
-    const timeoutId = setTimeout(onComplete, 5000);
-    return () => clearTimeout(timeoutId);
-  }, [isVisible, onComplete]);
-
-  useEffect(() => {
-    if (!isVisible || !soundUrl) return;
-    audioManager.play(soundUrl);
-  }, [isVisible, soundUrl]);
-
   return (
     <>
       {/* Import Pixel Font */}
@@ -42,7 +27,7 @@ export default function RetroAlert({
           }
         `}
       </style>
-      
+
       <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-8">
         <AnimatePresence>
           {isVisible && (
@@ -66,17 +51,19 @@ export default function RetroAlert({
                 </motion.div>
 
                 {imageUrl && (
-                  <img 
-                    src={imageUrl} 
-                    alt="Avatar" 
+                  <img
+                    src={imageUrl}
+                    alt="Avatar"
                     className="h-24 w-24 object-cover border-4 border-white mb-4 shadow-[4px_4px_0_#000]"
                     style={{ imageRendering: "pixelated" }}
                   />
                 )}
 
                 <div className="text-xl leading-loose">
-                  <span className="text-green-400">{donorName}</span><br />
-                  INSERTED <span className="text-yellow-400 text-2xl">{amount}</span>
+                  <span className="text-green-400">{donorName}</span>
+                  <br />
+                  INSERTED{" "}
+                  <span className="text-yellow-400 text-2xl">{amount}</span>
                 </div>
 
                 {message && (

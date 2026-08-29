@@ -1,8 +1,6 @@
-import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import CyberpunkFX from "./CyberpunkFX";
-import { audioManager } from "#/lib/AudioManager";
+import { AnimatePresence, motion } from "framer-motion";
 import { type BaseAlertProps } from "../../types";
+import CyberpunkFX from "./CyberpunkFX";
 
 export default function CyberpunkAlert({
   isVisible,
@@ -10,25 +8,7 @@ export default function CyberpunkAlert({
   amount,
   message,
   imageUrl,
-  soundUrl,
-  onComplete,
 }: BaseAlertProps) {
-  
-  useEffect(() => {
-    if (!isVisible) return;
-
-    const timeoutId = setTimeout(() => {
-      onComplete();
-    }, 5000);
-
-    return () => clearTimeout(timeoutId);
-  }, [isVisible, onComplete]);
-
-  useEffect(() => {
-    if (!isVisible || !soundUrl) return;
-    audioManager.play(soundUrl);
-  }, [isVisible, soundUrl]);
-
   return (
     <div
       className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center pb-24"

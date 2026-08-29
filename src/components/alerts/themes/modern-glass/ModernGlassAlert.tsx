@@ -1,7 +1,5 @@
-import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { type BaseAlertProps } from "../../types";
-import { audioManager } from "#/lib/AudioManager";
 
 export default function ModernGlassAlert({
   isVisible,
@@ -9,20 +7,7 @@ export default function ModernGlassAlert({
   amount,
   message,
   imageUrl,
-  soundUrl,
-  onComplete,
 }: BaseAlertProps) {
-  useEffect(() => {
-    if (!isVisible) return;
-    const timeoutId = setTimeout(onComplete, 5000);
-    return () => clearTimeout(timeoutId);
-  }, [isVisible, onComplete]);
-
-  useEffect(() => {
-    if (!isVisible || !soundUrl) return;
-    audioManager.play(soundUrl);
-  }, [isVisible, soundUrl]);
-
   return (
     <div className="pointer-events-none fixed inset-0 z-50 flex items-start justify-center pt-24">
       <AnimatePresence>
@@ -62,9 +47,7 @@ export default function ModernGlassAlert({
                 <div className="text-sm font-semibold tracking-wider text-blue-200 uppercase">
                   New Supporter
                 </div>
-                <div className="text-2xl font-bold text-white">
-                  {donorName}
-                </div>
+                <div className="text-2xl font-bold text-white">{donorName}</div>
                 <div className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
                   {amount}
                 </div>

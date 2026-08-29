@@ -1,7 +1,5 @@
-import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { type BaseAlertProps } from "../../types";
-import { audioManager } from "#/lib/AudioManager";
 
 export default function MinimalAlert({
   isVisible,
@@ -9,20 +7,7 @@ export default function MinimalAlert({
   amount,
   message,
   imageUrl,
-  soundUrl,
-  onComplete,
 }: BaseAlertProps) {
-  useEffect(() => {
-    if (!isVisible) return;
-    const timeoutId = setTimeout(onComplete, 5000);
-    return () => clearTimeout(timeoutId);
-  }, [isVisible, onComplete]);
-
-  useEffect(() => {
-    if (!isVisible || !soundUrl) return;
-    audioManager.play(soundUrl);
-  }, [isVisible, soundUrl]);
-
   return (
     <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
       <AnimatePresence>
@@ -61,7 +46,8 @@ export default function MinimalAlert({
                 transition={{ delay: 0.4 }}
                 className="mt-2 text-4xl font-light text-white"
               >
-                <span className="font-semibold">{donorName}</span> sent <span className="font-medium text-emerald-400">{amount}</span>
+                <span className="font-semibold">{donorName}</span> sent{" "}
+                <span className="font-medium text-emerald-400">{amount}</span>
               </motion.div>
             </div>
 

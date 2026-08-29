@@ -1,7 +1,5 @@
-import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { type BaseAlertProps } from "../../types";
-import { audioManager } from "#/lib/AudioManager";
 
 export default function AnimeAlert({
   isVisible,
@@ -9,20 +7,7 @@ export default function AnimeAlert({
   amount,
   message,
   imageUrl,
-  soundUrl,
-  onComplete,
 }: BaseAlertProps) {
-  useEffect(() => {
-    if (!isVisible) return;
-    const timeoutId = setTimeout(onComplete, 5000);
-    return () => clearTimeout(timeoutId);
-  }, [isVisible, onComplete]);
-
-  useEffect(() => {
-    if (!isVisible || !soundUrl) return;
-    audioManager.play(soundUrl);
-  }, [isVisible, soundUrl]);
-
   return (
     <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
       <AnimatePresence>
@@ -53,7 +38,6 @@ export default function AnimeAlert({
             >
               {/* Inner white border */}
               <div className="flex w-full items-center gap-8 border-4 border-white p-8">
-                
                 {imageUrl && (
                   <motion.div
                     initial={{ scale: 0, rotate: -45 }}
@@ -62,9 +46,9 @@ export default function AnimeAlert({
                     className="flex-shrink-0"
                     style={{ skewX: 15 }} // un-skew
                   >
-                    <img 
-                      src={imageUrl} 
-                      alt="" 
+                    <img
+                      src={imageUrl}
+                      alt=""
                       className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-[8px_8px_0_rgba(0,0,0,1)]"
                     />
                   </motion.div>
@@ -79,10 +63,10 @@ export default function AnimeAlert({
                   >
                     Kansei Dorifto?!
                   </motion.div>
-                  
+
                   <div className="mt-1 flex items-baseline gap-4">
                     <span className="text-4xl font-bold">{donorName}</span>
-                    <motion.span 
+                    <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: [2, 1] }}
                       transition={{ delay: 0.4 }}

@@ -4,6 +4,4 @@ export interface BaseAlertProps {
   amount: string;
   message?: string;
   imageUrl?: string;
-  soundUrl?: string;
-  onComplete: () => void;
 }
