@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StreamOverlay3DRouteImport } from './routes/StreamOverlay3D'
 import { Route as RotatingPanelRouteImport } from './routes/rotatingPanel'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StreamOverlay3DRoute = StreamOverlay3DRouteImport.update({
+  id: '/StreamOverlay3D',
+  path: '/StreamOverlay3D',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RotatingPanelRoute = RotatingPanelRouteImport.update({
@@ -25,27 +31,31 @@ const RotatingPanelRoute = RotatingPanelRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/StreamOverlay3D': typeof StreamOverlay3DRoute
   '/rotatingPanel': typeof RotatingPanelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/StreamOverlay3D': typeof StreamOverlay3DRoute
   '/rotatingPanel': typeof RotatingPanelRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/StreamOverlay3D': typeof StreamOverlay3DRoute
   '/rotatingPanel': typeof RotatingPanelRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/rotatingPanel'
+  fullPaths: '/' | '/StreamOverlay3D' | '/rotatingPanel'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/rotatingPanel'
-  id: '__root__' | '/' | '/rotatingPanel'
+  to: '/' | '/StreamOverlay3D' | '/rotatingPanel'
+  id: '__root__' | '/' | '/StreamOverlay3D' | '/rotatingPanel'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  StreamOverlay3DRoute: typeof StreamOverlay3DRoute
   RotatingPanelRoute: typeof RotatingPanelRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/StreamOverlay3D': {
+      id: '/StreamOverlay3D'
+      path: '/StreamOverlay3D'
+      fullPath: '/StreamOverlay3D'
+      preLoaderRoute: typeof StreamOverlay3DRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rotatingPanel': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  StreamOverlay3DRoute: StreamOverlay3DRoute,
   RotatingPanelRoute: RotatingPanelRoute,
 }
 export const routeTree = rootRouteImport
