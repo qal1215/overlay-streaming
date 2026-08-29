@@ -1,7 +1,8 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { useRef, Suspense } from "react"; // Thêm Suspense từ react
+import { useRef, Suspense, useState, useEffect } from "react"; // Thêm Suspense từ react
 import * as THREE from "three";
+import CyberpunkAlert from "./CyberpunkAlert";
 
 type OverlayObjectProps = {
   src: string;
@@ -35,6 +36,29 @@ function OverlayObject({ src }: OverlayObjectProps) {
 }
 
 export default function StreamOverlay3D() {
+  const [alertState, setAlertState] = useState({
+    isVisible: false,
+    donorName: "",
+    amount: "",
+    message: "",
+  });
+
+  // Example: Mock receiving a donation event for testing (Press 't' to trigger)
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "t") {
+        setAlertState({
+          isVisible: true,
+          donorName: "Neo_Hacker",
+          amount: "$50.00",
+          message: "Wake up, Neo. The matrix has you...",
+        });
+      }
+    };
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, []);
+
   return (
     <div
       style={{
@@ -46,21 +70,30 @@ export default function StreamOverlay3D() {
         left: 0,
       }}
     >
-      <Canvas
-        camera={{
-          position: [0, 0, 8],
-          fov: 35,
-        }}
-        gl={{
-          alpha: true,
-          antialias: true,
-        }}
-      >
-        {/* Bọc OverlayObject trong Suspense */}
-        <Suspense fallback={null}>
-          <OverlayObject src="/overlay.png" />
-        </Suspense>
-      </Canvas>
+      {/* Cyberpunk Donation Alert Overlay */}
+      <CyberpunkAlert
+        isVisible={alertState.isVisible}
+        donorName={alertState.donorName}
+        amount={alertState.amount}
+        message={alertState.message}
+        onComplete={() => setAlertState((s) => ({ ...s, isVisible: false }))}
+      />
     </div>
   );
 }
+
+// <Canvas
+//   camera={{
+//     position: [0, 0, 8],
+//     fov: 35,
+//   }}
+//   gl={{
+//     alpha: true,
+//     antialias: true,
+//   }}
+// >
+//   {/* Bọc OverlayObject trong Suspense */}
+//   <Suspense fallback={null}>
+//     <OverlayObject src="/overlay.png" />
+//   </Suspense>
+// </Canvas>
