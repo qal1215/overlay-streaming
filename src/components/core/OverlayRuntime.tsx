@@ -25,6 +25,71 @@ export default function OverlayRuntime({
     }
   }, [isPreview]);
 
+  // Connect to Cloudflare Durable Object WebSocket
+  useEffect(() => {
+    let ws: WebSocket;
+    let reconnectTimer: NodeJS.Timeout;
+    let pingTimer: NodeJS.Timeout;
+    let isComponentMounted = true;
+
+    const connect = () => {
+      if (!isComponentMounted) return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const creatorId = urlParams.get("creatorId") || "default_creator";
+      const apiHost = import.meta.env.VITE_API_URL || "localhost:8787";
+      const wsProtocol = window.location.protocol === "https:" || apiHost.includes("https") ? "wss:" : "ws:";
+      
+      const cleanHost = apiHost.replace(/^https?:\/\//, '');
+      const wsUrl = `${wsProtocol}//${cleanHost}/api/overlay/${creatorId}/ws`;
+
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log("[Overlay WS] Connected to room:", creatorId);
+        // Keep-alive ping every 30 seconds to prevent Cloudflare from dropping the connection
+        pingTimer = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "PING" }));
+          }
+        }, 30000);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === "NEW_ALERT") {
+            console.log("[Overlay WS] Received alert:", payload.data);
+            alertQueue.push(payload.data);
+          }
+        } catch (err) {
+          console.error("[Overlay WS] Failed to parse message:", err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error("[Overlay WS] WebSocket Error:", err);
+      };
+
+      ws.onclose = () => {
+        clearInterval(pingTimer);
+        console.log("[Overlay WS] Disconnected. Reconnecting in 3s...");
+        if (isComponentMounted) {
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      isComponentMounted = false;
+      clearTimeout(reconnectTimer);
+      clearInterval(pingTimer);
+      if (ws) ws.close();
+    };
+  }, []);
+
   // Auto-initialize audio manager on first interaction (required by OBS/browsers)
   useEffect(() => {
     const initAudio = async () => {

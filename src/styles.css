@@ -1,5 +1,6 @@
 
 @import "tailwindcss";
+@source "../../../packages/alert-engine/src";
 
 * {
   box-sizing: border-box;
