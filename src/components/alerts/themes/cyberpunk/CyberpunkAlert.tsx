@@ -2,16 +2,7 @@ import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CyberpunkFX from "./CyberpunkFX";
 import { audioManager } from "#/lib/AudioManager";
-
-export interface CyberpunkAlertProps {
-  isVisible: boolean;
-  donorName: string;
-  amount: string;
-  message?: string;
-  imageUrl?: string;
-  soundUrl?: string;
-  onComplete: () => void;
-}
+import { type BaseAlertProps } from "../../types";
 
 export default function CyberpunkAlert({
   isVisible,
@@ -21,7 +12,7 @@ export default function CyberpunkAlert({
   imageUrl,
   soundUrl,
   onComplete,
-}: CyberpunkAlertProps) {
+}: BaseAlertProps) {
   
   useEffect(() => {
     if (!isVisible) return;

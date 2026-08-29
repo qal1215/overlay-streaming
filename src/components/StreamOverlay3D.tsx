@@ -38,17 +38,36 @@ function OverlayObject({ src }: OverlayObjectProps) {
 export default function StreamOverlay3D() {
   const [currentAlert, setCurrentAlert] = useState<AlertEvent | null>(null);
 
-  // Example: Mock receiving a donation event for testing (Press 't' to trigger)
+  // Mock receiving donation events for testing
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === "t") {
-        setCurrentAlert({
-          id: Date.now().toString(),
-          theme: "cyberpunk",
-          donorName: "Neo_Hacker",
-          amount: "$50.00",
-          message: "Wake up, Neo. The matrix has you...",
-        });
+      const baseAlert = {
+        id: Date.now().toString(),
+        donorName: "Neo_Hacker",
+        amount: "$50.00",
+        message: "Wake up, Neo. The matrix has you...",
+        imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neo", // Mock avatar
+      };
+
+      switch (e.key) {
+        case "1":
+          setCurrentAlert({ ...baseAlert, theme: "cyberpunk" });
+          break;
+        case "2":
+          setCurrentAlert({ ...baseAlert, theme: "minimal" });
+          break;
+        case "3":
+          setCurrentAlert({ ...baseAlert, theme: "modern-glass" });
+          break;
+        case "4":
+          setCurrentAlert({ ...baseAlert, theme: "gaming" });
+          break;
+        case "5":
+          setCurrentAlert({ ...baseAlert, theme: "anime" });
+          break;
+        case "6":
+          setCurrentAlert({ ...baseAlert, theme: "retro" });
+          break;
       }
     };
     window.addEventListener("keydown", handleKeydown);

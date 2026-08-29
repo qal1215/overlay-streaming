@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StreamOverlay3DRouteImport } from './routes/StreamOverlay3D'
+import { Route as DonationAlertRouteImport } from './routes/donationAlert'
 import { Route as RotatingPanelRouteImport } from './routes/rotatingPanel'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const StreamOverlay3DRoute = StreamOverlay3DRouteImport.update({
   path: '/StreamOverlay3D',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DonationAlertRoute = DonationAlertRouteImport.update({
+  id: '/donationAlert',
+  path: '/donationAlert',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RotatingPanelRoute = RotatingPanelRouteImport.update({
   id: '/rotatingPanel',
   path: '/rotatingPanel',
@@ -32,30 +38,35 @@ const RotatingPanelRoute = RotatingPanelRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/StreamOverlay3D': typeof StreamOverlay3DRoute
+  '/donationAlert': typeof DonationAlertRoute
   '/rotatingPanel': typeof RotatingPanelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/StreamOverlay3D': typeof StreamOverlay3DRoute
+  '/donationAlert': typeof DonationAlertRoute
   '/rotatingPanel': typeof RotatingPanelRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/StreamOverlay3D': typeof StreamOverlay3DRoute
+  '/donationAlert': typeof DonationAlertRoute
   '/rotatingPanel': typeof RotatingPanelRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/StreamOverlay3D' | '/rotatingPanel'
+  fullPaths: '/' | '/StreamOverlay3D' | '/donationAlert' | '/rotatingPanel'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/StreamOverlay3D' | '/rotatingPanel'
-  id: '__root__' | '/' | '/StreamOverlay3D' | '/rotatingPanel'
+  to: '/' | '/StreamOverlay3D' | '/donationAlert' | '/rotatingPanel'
+  id:
+    '__root__' | '/' | '/StreamOverlay3D' | '/donationAlert' | '/rotatingPanel'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   StreamOverlay3DRoute: typeof StreamOverlay3DRoute
+  DonationAlertRoute: typeof DonationAlertRoute
   RotatingPanelRoute: typeof RotatingPanelRoute
 }
 
@@ -75,6 +86,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StreamOverlay3DRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/donationAlert': {
+      id: '/donationAlert'
+      path: '/donationAlert'
+      fullPath: '/donationAlert'
+      preLoaderRoute: typeof DonationAlertRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rotatingPanel': {
       id: '/rotatingPanel'
       path: '/rotatingPanel'
@@ -88,6 +106,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   StreamOverlay3DRoute: StreamOverlay3DRoute,
+  DonationAlertRoute: DonationAlertRoute,
   RotatingPanelRoute: RotatingPanelRoute,
 }
 export const routeTree = rootRouteImport
