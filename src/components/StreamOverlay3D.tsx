@@ -1,8 +1,8 @@
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { TextureLoader } from "three";
-import { useRef, Suspense, useState, useEffect } from "react"; // Thêm Suspense từ react
+import { useFrame, useLoader } from "@react-three/fiber";
+import { useEffect, useRef, useState } from "react"; // Thêm Suspense từ react
 import * as THREE from "three";
-import CyberpunkAlert from "./CyberpunkAlert";
+import { TextureLoader } from "three";
+import AlertRenderer, { type AlertEvent } from "./alerts/AlertRenderer";
 
 type OverlayObjectProps = {
   src: string;
@@ -36,19 +36,15 @@ function OverlayObject({ src }: OverlayObjectProps) {
 }
 
 export default function StreamOverlay3D() {
-  const [alertState, setAlertState] = useState({
-    isVisible: false,
-    donorName: "",
-    amount: "",
-    message: "",
-  });
+  const [currentAlert, setCurrentAlert] = useState<AlertEvent | null>(null);
 
   // Example: Mock receiving a donation event for testing (Press 't' to trigger)
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.key === "t") {
-        setAlertState({
-          isVisible: true,
+        setCurrentAlert({
+          id: Date.now().toString(),
+          theme: "cyberpunk",
           donorName: "Neo_Hacker",
           amount: "$50.00",
           message: "Wake up, Neo. The matrix has you...",
@@ -70,13 +66,10 @@ export default function StreamOverlay3D() {
         left: 0,
       }}
     >
-      {/* Cyberpunk Donation Alert Overlay */}
-      <CyberpunkAlert
-        isVisible={alertState.isVisible}
-        donorName={alertState.donorName}
-        amount={alertState.amount}
-        message={alertState.message}
-        onComplete={() => setAlertState((s) => ({ ...s, isVisible: false }))}
+      {/* Alert Engine Rendering Layer */}
+      <AlertRenderer
+        currentAlert={currentAlert}
+        onComplete={() => setCurrentAlert(null)}
       />
     </div>
   );
