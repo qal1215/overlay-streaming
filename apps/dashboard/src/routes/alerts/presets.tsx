@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useCreateAlert } from '../../hooks/useAlerts'
+import { useCreateAlert } from '../../features/alerts/hooks/useAlerts'
 import type { AlertPreset, AlertTheme } from '@overlay/schema'
 
 export const Route = createFileRoute('/alerts/presets')({

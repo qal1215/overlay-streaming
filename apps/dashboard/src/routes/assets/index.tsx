@@ -6,7 +6,7 @@ import {
   useAssets,
   useDeleteAsset,
   useUploadAsset,
-} from "../../hooks/useAssets";
+} from "../../features/assets/hooks/useAssets";
 
 export const Route = createFileRoute("/assets/")({
   component: AssetsLibraryPage,

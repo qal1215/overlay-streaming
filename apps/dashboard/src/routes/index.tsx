@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useCreatorConfig, useTestAlert, useUpdateCreatorConfig } from '../hooks/useCreator'
+import { useCreatorConfig, useTestAlert, useUpdateCreatorConfig } from '../features/creator/hooks/useCreator'
 import { Palette, Volume2, Play, ExternalLink } from 'lucide-react'
 
 export const Route = createFileRoute('/')({

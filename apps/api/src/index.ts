@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import adminRouter from "./routes/admin";
-import { OverlayRoom } from "./OverlayRoom";
+import { OverlayRoom } from "./durable-objects/OverlayRoom";
 
 type Bindings = {
   DB: D1Database;

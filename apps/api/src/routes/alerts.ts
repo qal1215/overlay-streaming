@@ -1,121 +1,53 @@
 import { Hono } from "hono";
 import { Bindings } from "./admin";
-import { AlertPresetSchema } from "@overlay/schema";
+import { AlertService } from "../services/alert-service";
 
 const alertsRouter = new Hono<{ Bindings: Bindings }>();
 
-// GET /api/admin/creator/:id/alerts
 alertsRouter.get("/", async (c) => {
-  const creatorId = c.req.param("id");
-  const { results } = await c.env.DB.prepare(
-    "SELECT id, creator_id, name, created_at, updated_at FROM alerts WHERE creator_id = ? ORDER BY updated_at DESC"
-  )
-    .bind(creatorId)
-    .all();
-
-  return c.json(results);
+  const service = new AlertService(c.env.DB);
+  return c.json(await service.listAlerts(c.req.param("id")));
 });
 
-// POST /api/admin/creator/:id/alerts
 alertsRouter.post("/", async (c) => {
-  const creatorId = c.req.param("id");
+  const service = new AlertService(c.env.DB);
   const body = await c.req.json().catch(() => ({}));
-  const id = crypto.randomUUID();
-  const name = body.name || "New Alert";
-  
-  // Provide default preset structure based on the schema
-  const defaultPreset = AlertPresetSchema.parse({ theme: "cyberpunk" });
-  const presetStr = JSON.stringify(body.preset || defaultPreset);
-
-  const result = await c.env.DB.prepare(
-    `INSERT INTO alerts (id, creator_id, name, preset) VALUES (?, ?, ?, ?)`
-  )
-    .bind(id, creatorId, name, presetStr)
-    .run();
-
-  if (result.success) {
-    return c.json({ id, creator_id: creatorId, name, preset: JSON.parse(presetStr) });
+  try {
+    const result = await service.createAlert(c.req.param("id"), body);
+    return c.json(result);
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
   }
-
-  return c.json({ error: "Failed to create alert" }, 500);
 });
 
-// GET /api/admin/creator/:id/alerts/:alertId
 alertsRouter.get("/:alertId", async (c) => {
-  const creatorId = c.req.param("id");
-  const alertId = c.req.param("alertId");
-
-  const { results } = await c.env.DB.prepare(
-    "SELECT * FROM alerts WHERE id = ? AND creator_id = ?"
-  )
-    .bind(alertId, creatorId)
-    .all();
-
-  if (results.length === 0) {
-    return c.json({ error: "Alert not found" }, 404);
-  }
-
-  const alert = results[0];
-  return c.json({
-    ...alert,
-    preset: JSON.parse(alert.preset as string),
-  });
+  const service = new AlertService(c.env.DB);
+  const result = await service.getAlert(c.req.param("id"), c.req.param("alertId"));
+  if (!result) return c.json({ error: "Alert not found" }, 404);
+  return c.json(result);
 });
 
-// PATCH /api/admin/creator/:id/alerts/:alertId
 alertsRouter.patch("/:alertId", async (c) => {
-  const creatorId = c.req.param("id");
-  const alertId = c.req.param("alertId");
+  const service = new AlertService(c.env.DB);
   const body = await c.req.json().catch(() => ({}));
-
-  const { results } = await c.env.DB.prepare("SELECT * FROM alerts WHERE id = ? AND creator_id = ?").bind(alertId, creatorId).all();
-  if (results.length === 0) return c.json({ error: "Alert not found" }, 404);
-
-  const current = results[0];
-  const name = body.name ?? current.name;
-  
-  let presetStr = current.preset as string;
-  if (body.preset) {
-    try {
-      // Partially merge preset
-      const currentPreset = JSON.parse(presetStr);
-      const mergedPreset = { ...currentPreset, ...body.preset };
-      // Deep merge for nested objects if needed, but for now simple spread is fine if we send full objects for nested properties
-      presetStr = JSON.stringify(mergedPreset);
-    } catch (e) {
-      return c.json({ error: "Invalid preset JSON" }, 400);
-    }
-  }
-
-  const result = await c.env.DB.prepare(
-    `UPDATE alerts SET name = ?, preset = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND creator_id = ?`
-  )
-    .bind(name, presetStr, alertId, creatorId)
-    .run();
-
-  if (result.success) {
+  try {
+    const result = await service.updateAlert(c.req.param("id"), c.req.param("alertId"), body);
     return c.json({ success: true, message: "Alert updated" });
+  } catch (e: any) {
+    if (e.message === "Alert not found") return c.json({ error: e.message }, 404);
+    if (e.message === "Invalid preset JSON") return c.json({ error: e.message }, 400);
+    return c.json({ error: e.message }, 500);
   }
-
-  return c.json({ error: "Failed to update alert" }, 500);
 });
 
-// DELETE /api/admin/creator/:id/alerts/:alertId
 alertsRouter.delete("/:alertId", async (c) => {
-  const creatorId = c.req.param("id");
-  const alertId = c.req.param("alertId");
-
-  const result = await c.env.DB.prepare(
-    "DELETE FROM alerts WHERE id = ? AND creator_id = ?"
-  )
-    .bind(alertId, creatorId)
-    .run();
-
-  if (result.success) {
+  const service = new AlertService(c.env.DB);
+  try {
+    const result = await service.deleteAlert(c.req.param("id"), c.req.param("alertId"));
     return c.json({ success: true, message: "Alert deleted" });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
   }
-
-  return c.json({ error: "Failed to delete alert" }, 500);
 });
 
 export default alertsRouter;

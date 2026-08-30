@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useAlert, useUpdateAlert } from '../../hooks/useAlerts'
+import { useAlert, useUpdateAlert } from '../../features/alerts/hooks/useAlerts'
 import { ArrowLeft, Save, Play, MonitorPlay, Type, Settings, Volume2, Mic } from 'lucide-react'
 import { useState, useEffect } from 'react'
 

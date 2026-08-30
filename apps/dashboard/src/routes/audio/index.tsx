@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useAudioAssets, useUploadAudio, useDeleteAudio } from '../../hooks/useAudio'
+import { useAudioAssets, useUploadAudio, useDeleteAudio } from '../../features/audio/hooks/useAudio'
 import { Music, Upload, Trash2, Play, Pause, Volume2, Cloud } from 'lucide-react'
 import { useState, useRef } from 'react'
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AlertPreset } from "@overlay/schema";
-import { apiClient } from "../api/client";
+import { apiClient } from "../../../api/client";
 
 const CREATOR_ID = "default_creator";
 
@@ -33,7 +33,7 @@ export function useCreateAlert() {
 
   return useMutation({
     mutationFn: (data: { name: string; preset?: Partial<AlertPreset> }) =>
-      apiClient.post(`/api/admin/creator/${CREATOR_ID}/alerts`, data),
+      apiClient.post<{ id: string }>(`/api/admin/creator/${CREATOR_ID}/alerts`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creator", CREATOR_ID, "alerts"] });
     },

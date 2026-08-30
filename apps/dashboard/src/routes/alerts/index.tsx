@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useAlerts, useDeleteAlert } from '../../hooks/useAlerts'
+import { useAlerts, useDeleteAlert } from '../../features/alerts/hooks/useAlerts'
 import { Plus, Edit, Trash2, BellRing } from 'lucide-react'
 
 export const Route = createFileRoute('/alerts/')({

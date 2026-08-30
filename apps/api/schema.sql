@@ -16,9 +16,11 @@ CREATE TABLE overlays (
   id TEXT PRIMARY KEY,
   creator_id TEXT NOT NULL,
   name TEXT NOT NULL,
-  resolution_width INTEGER NOT NULL,
-  resolution_height INTEGER NOT NULL,
-  components TEXT NOT NULL, -- JSON string
+  description TEXT,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT 0,
+  definition_json TEXT NOT NULL, -- JSON string containing components
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

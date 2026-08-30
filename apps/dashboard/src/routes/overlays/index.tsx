@@ -1,6 +1,13 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useOverlays, useCreateOverlay, useDuplicateOverlay, useDeleteOverlay } from '../../hooks/useOverlays'
-import { Plus, Edit, Copy, Trash2, LayoutTemplate } from 'lucide-react'
+import { 
+  useOverlays, 
+  useCreateOverlay, 
+  useDuplicateOverlay, 
+  useDeleteOverlay,
+  useActivateOverlay,
+  useDeactivateOverlay
+} from '../../features/overlays/hooks/useOverlays'
+import { Plus, Edit, Copy, Trash2, LayoutTemplate, MonitorPlay, MonitorOff } from 'lucide-react'
 
 export const Route = createFileRoute('/overlays/')({
   component: OverlaysListPage,
@@ -11,6 +18,8 @@ function OverlaysListPage() {
   const createOverlay = useCreateOverlay()
   const duplicateOverlay = useDuplicateOverlay()
   const deleteOverlay = useDeleteOverlay()
+  const activateOverlay = useActivateOverlay()
+  const deactivateOverlay = useDeactivateOverlay()
   const navigate = useNavigate()
 
   const handleCreate = async () => {
@@ -57,12 +66,29 @@ function OverlaysListPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {overlays?.map((overlay) => (
-            <div key={overlay.id} className="group bg-surface border border-white/5 rounded-2xl p-6 backdrop-blur-xl hover:border-primary/50 transition-colors flex flex-col">
+            <div key={overlay.id} className={`group bg-surface border rounded-2xl p-6 backdrop-blur-xl transition-colors flex flex-col ${overlay.enabled ? 'border-primary/50' : 'border-white/5 hover:border-white/20'}`}>
               <div className="flex-1">
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold truncate pr-4" title={overlay.name}>{overlay.name}</h3>
-                  <div className="px-2 py-1 bg-white/5 rounded text-xs font-medium text-text-muted whitespace-nowrap">
-                    {overlay.resolution_width} × {overlay.resolution_height}
+                  <div className="flex flex-col">
+                    <h3 className="text-xl font-bold truncate pr-4" title={overlay.name}>{overlay.name}</h3>
+                    {overlay.description && (
+                      <span className="text-sm text-text-muted line-clamp-1">{overlay.description}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="px-2 py-1 bg-white/5 rounded text-xs font-medium text-text-muted whitespace-nowrap">
+                      {overlay.width} × {overlay.height}
+                    </div>
+                    {overlay.enabled ? (
+                      <span className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                        Active
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider text-text-muted bg-white/5 px-2 py-0.5 rounded-full">
+                        Inactive
+                      </span>
+                    )}
                   </div>
                 </div>
                 
@@ -74,13 +100,13 @@ function OverlaysListPage() {
                   <div className="flex justify-between">
                     <span>Updated</span>
                     <span className="text-text">
-                      {overlay.updated_at ? new Date(overlay.updated_at).toLocaleDateString() : 'N/A'}
+                      {overlay.updatedAt ? new Date(overlay.updatedAt).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/10 mt-auto">
+              <div className="grid grid-cols-4 gap-2 pt-4 border-t border-white/10 mt-auto">
                 <Link
                   to="/overlays/$id"
                   params={{ id: overlay.id }}
@@ -89,6 +115,27 @@ function OverlaysListPage() {
                   <Edit size={16} />
                   <span className="text-xs font-medium">Edit</span>
                 </Link>
+
+                {overlay.enabled ? (
+                  <button
+                    onClick={() => deactivateOverlay.mutate(overlay.id)}
+                    disabled={deactivateOverlay.isPending}
+                    className="flex flex-col items-center justify-center gap-1 py-2 text-primary hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <MonitorOff size={16} />
+                    <span className="text-xs font-medium">Deactivate</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => activateOverlay.mutate(overlay.id)}
+                    disabled={activateOverlay.isPending}
+                    className="flex flex-col items-center justify-center gap-1 py-2 text-text-muted hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <MonitorPlay size={16} />
+                    <span className="text-xs font-medium">Activate</span>
+                  </button>
+                )}
+
                 <button
                   onClick={() => duplicateOverlay.mutate(overlay.id)}
                   disabled={duplicateOverlay.isPending}

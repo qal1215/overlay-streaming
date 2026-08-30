@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreatorConfig } from "@overlay/schema";
-import { apiClient } from "../api/client";
+import { apiClient } from "../../../api/client";
 
 const CREATOR_ID = "default_creator"; // Hardcoded for now
 

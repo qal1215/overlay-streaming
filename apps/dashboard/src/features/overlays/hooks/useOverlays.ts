@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { OverlayDefinition } from "@overlay/schema";
-import { apiClient } from "../api/client";
+import { apiClient } from "../../../api/client";
 
 const CREATOR_ID = "default_creator";
 
@@ -23,8 +23,8 @@ export function useCreateOverlay() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { name: string; resolution_width?: number; resolution_height?: number }) =>
-      apiClient.post(`/api/admin/creator/${CREATOR_ID}/overlays`, data),
+    mutationFn: (data: { name: string; width?: number; height?: number }) =>
+      apiClient.post<{ id: string }>(`/api/admin/creator/${CREATOR_ID}/overlays`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creator", CREATOR_ID, "overlays"] });
     },
@@ -44,24 +44,48 @@ export function useUpdateOverlay() {
   });
 }
 
-export function useDuplicateOverlay() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (overlayId: string) =>
-      apiClient.post(`/api/admin/creator/${CREATOR_ID}/overlays/${overlayId}/duplicate`, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["creator", CREATOR_ID, "overlays"] });
-    },
-  });
-}
-
 export function useDeleteOverlay() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (overlayId: string) =>
       apiClient.delete(`/api/admin/creator/${CREATOR_ID}/overlays/${overlayId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["creator", CREATOR_ID, "overlays"] });
+    },
+  });
+}
+
+export function useDuplicateOverlay() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (overlayId: string) =>
+      apiClient.post<{ id: string }>(`/api/admin/creator/${CREATOR_ID}/overlays/${overlayId}/duplicate`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["creator", CREATOR_ID, "overlays"] });
+    },
+  });
+}
+
+export function useActivateOverlay() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (overlayId: string) =>
+      apiClient.post<{ success: boolean }>(`/api/admin/creator/${CREATOR_ID}/overlays/${overlayId}/activate`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["creator", CREATOR_ID, "overlays"] });
+    },
+  });
+}
+
+export function useDeactivateOverlay() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (overlayId: string) =>
+      apiClient.post<{ success: boolean }>(`/api/admin/creator/${CREATOR_ID}/overlays/${overlayId}/deactivate`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creator", CREATOR_ID, "overlays"] });
     },

@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
-import { useAssets } from "../../hooks/useAssets";
-import { useOverlay, useUpdateOverlay } from "../../hooks/useOverlays";
+import { useAssets } from "../../features/assets/hooks/useAssets";
+import { useOverlay, useUpdateOverlay } from "../../features/overlays/hooks/useOverlays";
 
 export const Route = createFileRoute("/overlays/$id")({
   component: OverlayEditorPage,
@@ -156,7 +156,7 @@ function OverlayEditorPage() {
 
         <div className="flex items-center gap-2">
           <div className="text-xs text-text-muted mr-4 bg-black/20 px-2 py-1 rounded">
-            {overlay.resolution_width} × {overlay.resolution_height}
+            {overlay.width} × {overlay.height}
           </div>
           <button
             onClick={() => {
