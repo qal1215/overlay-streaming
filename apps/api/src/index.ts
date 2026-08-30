@@ -15,7 +15,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(
   "/api/*",
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
     credentials: true,
   })
 );
@@ -66,6 +66,23 @@ app.get("/api/overlay/:id/ws", async (c) => {
   const room = c.env.OVERLAY_ROOM.get(id);
   
   return room.fetch(c.req.raw);
+});
+
+// Broadcast event to overlay
+app.post("/api/overlay/:id/broadcast", async (c) => {
+  const creatorId = c.req.param("id");
+  const id = c.env.OVERLAY_ROOM.idFromName(creatorId);
+  const room = c.env.OVERLAY_ROOM.get(id);
+  
+  // Create a new request directed to the DO's /broadcast route
+  const body = await c.req.json();
+  const req = new Request(`http://do/broadcast`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" }
+  });
+  
+  return room.fetch(req);
 });
 
 app.get("/", (c) => {

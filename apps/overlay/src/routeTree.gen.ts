@@ -10,17 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DonationAlertRouteImport } from './routes/donationAlert'
 import { Route as RotatingPanelRouteImport } from './routes/rotatingPanel'
+import { Route as OverlaysIdRouteImport } from './routes/overlays/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DonationAlertRoute = DonationAlertRouteImport.update({
-  id: '/donationAlert',
-  path: '/donationAlert',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RotatingPanelRoute = RotatingPanelRouteImport.update({
@@ -28,35 +23,40 @@ const RotatingPanelRoute = RotatingPanelRouteImport.update({
   path: '/rotatingPanel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OverlaysIdRoute = OverlaysIdRouteImport.update({
+  id: '/overlays/$id',
+  path: '/overlays/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/donationAlert': typeof DonationAlertRoute
   '/rotatingPanel': typeof RotatingPanelRoute
+  '/overlays/$id': typeof OverlaysIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/donationAlert': typeof DonationAlertRoute
   '/rotatingPanel': typeof RotatingPanelRoute
+  '/overlays/$id': typeof OverlaysIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/donationAlert': typeof DonationAlertRoute
   '/rotatingPanel': typeof RotatingPanelRoute
+  '/overlays/$id': typeof OverlaysIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/donationAlert' | '/rotatingPanel'
+  fullPaths: '/' | '/rotatingPanel' | '/overlays/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/donationAlert' | '/rotatingPanel'
-  id: '__root__' | '/' | '/donationAlert' | '/rotatingPanel'
+  to: '/' | '/rotatingPanel' | '/overlays/$id'
+  id: '__root__' | '/' | '/rotatingPanel' | '/overlays/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DonationAlertRoute: typeof DonationAlertRoute
   RotatingPanelRoute: typeof RotatingPanelRoute
+  OverlaysIdRoute: typeof OverlaysIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,13 +68,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/donationAlert': {
-      id: '/donationAlert'
-      path: '/donationAlert'
-      fullPath: '/donationAlert'
-      preLoaderRoute: typeof DonationAlertRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/rotatingPanel': {
       id: '/rotatingPanel'
       path: '/rotatingPanel'
@@ -82,13 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RotatingPanelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/overlays/$id': {
+      id: '/overlays/$id'
+      path: '/overlays/$id'
+      fullPath: '/overlays/$id'
+      preLoaderRoute: typeof OverlaysIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DonationAlertRoute: DonationAlertRoute,
   RotatingPanelRoute: RotatingPanelRoute,
+  OverlaysIdRoute: OverlaysIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

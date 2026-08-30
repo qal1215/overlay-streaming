@@ -159,6 +159,19 @@ function OverlayEditorPage() {
             {overlay.resolution_width} × {overlay.resolution_height}
           </div>
           <button
+            onClick={() => {
+              fetch('http://localhost:8787/api/overlay/default_creator/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'DONATION', amount: '$50.00', username: 'TestUser123' })
+              })
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors mr-2"
+          >
+            <Bell size={16} />
+            Test Alert
+          </button>
+          <button
             onClick={handleSave}
             disabled={updateOverlay.isPending}
             className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
