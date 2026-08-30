@@ -22,10 +22,25 @@ app.use(
 
 app.route("/api/admin", adminRouter);
 
-// Serve R2 Assets
+// Serve R2 Assets by Object Key OR Asset ID
 app.get("/api/assets/*", async (c) => {
-  const objectKey = c.req.path.replace('/api/assets/', '');
-  if (!objectKey) return c.json({ error: "No key provided" }, 400);
+  const path = c.req.path.replace('/api/assets/', '');
+  if (!path) return c.json({ error: "No key provided" }, 400);
+
+  let objectKey = path;
+
+  // If the path looks like an assetId (starts with asset_), lookup the storage_key in D1
+  if (path.startsWith('asset_')) {
+    const { results } = await c.env.DB.prepare(
+      "SELECT storage_key FROM assets WHERE id = ?"
+    )
+      .bind(path)
+      .all();
+      
+    if (results.length > 0) {
+      objectKey = results[0].storage_key as string;
+    }
+  }
 
   const object = await c.env.ASSETS_BUCKET.get(objectKey);
   
@@ -36,6 +51,8 @@ app.get("/api/assets/*", async (c) => {
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
+  // Cache aggressively for 1 year
+  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   
   return new Response(object.body, {
     headers,

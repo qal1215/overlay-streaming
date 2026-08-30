@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import overlaysRouter from "./overlays";
 import alertsRouter from "./alerts";
 import audioRouter from "./audio";
+import assetsRouter from "./assets";
 export type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
@@ -110,5 +111,6 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
 adminRouter.route("/creator/:id/overlays", overlaysRouter);
 adminRouter.route("/creator/:id/alerts", alertsRouter);
 adminRouter.route("/creator/:id/audio", audioRouter);
+adminRouter.route("/creator/:id/assets", assetsRouter);
 
 export default adminRouter;

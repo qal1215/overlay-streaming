@@ -10,26 +10,43 @@ export const ComponentSizeSchema = z.object({
   height: z.number(),
 });
 
-export const OverlayComponentSchema = z.object({
+export const BaseComponentSchema = z.object({
   id: z.string(),
-  type: z.enum(["alert", "text", "image", "video", "goal", "custom"]),
   position: ComponentPositionSchema,
   size: ComponentSizeSchema,
   zIndex: z.number().default(0),
-  config: z.record(z.unknown()), // Depending on component type
 });
+
+export const ImageComponentSchema = BaseComponentSchema.extend({
+  type: z.literal("image"),
+  assetId: z.string().optional(), // Used to lookup AssetDefinition from D1
+});
+
+export const VideoComponentSchema = BaseComponentSchema.extend({
+  type: z.literal("video"),
+  assetId: z.string().optional(),
+  loop: z.boolean().default(true),
+});
+
+export const OverlayComponentSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("alert"), id: z.string(), position: ComponentPositionSchema, size: ComponentSizeSchema, zIndex: z.number().default(0), config: z.record(z.unknown()) }),
+  z.object({ type: z.literal("text"), id: z.string(), position: ComponentPositionSchema, size: ComponentSizeSchema, zIndex: z.number().default(0), config: z.record(z.unknown()) }),
+  ImageComponentSchema,
+  VideoComponentSchema,
+  z.object({ type: z.literal("goal"), id: z.string(), position: ComponentPositionSchema, size: ComponentSizeSchema, zIndex: z.number().default(0), config: z.record(z.unknown()) }),
+  z.object({ type: z.literal("custom"), id: z.string(), position: ComponentPositionSchema, size: ComponentSizeSchema, zIndex: z.number().default(0), config: z.record(z.unknown()) }),
+]);
 
 export type OverlayComponent = z.infer<typeof OverlayComponentSchema>;
 
 export const OverlayDefinitionSchema = z.object({
   id: z.string(),
   name: z.string(),
-  resolution: z.object({
-    width: z.number(),
-    height: z.number(),
-  }),
+  resolution_width: z.number(),
+  resolution_height: z.number(),
   components: z.array(OverlayComponentSchema),
-  updatedAt: z.number(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
 });
 
 export type OverlayDefinition = z.infer<typeof OverlayDefinitionSchema>;

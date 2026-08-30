@@ -44,3 +44,21 @@ CREATE TABLE audio_assets (
   size INTEGER NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+DROP TABLE IF EXISTS assets;
+
+CREATE TABLE assets (
+  id TEXT PRIMARY KEY,
+  creator_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  storage_key TEXT NOT NULL,
+  url TEXT,
+  size INTEGER NOT NULL,
+  width INTEGER,
+  height INTEGER,
+  duration REAL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

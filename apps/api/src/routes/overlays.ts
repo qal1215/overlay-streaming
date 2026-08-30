@@ -55,9 +55,32 @@ overlaysRouter.get("/:overlayId", async (c) => {
   }
 
   const overlay = results[0];
+  const components = JSON.parse(overlay.components as string);
+  
+  // Extract all assetIds used in components
+  const assetIds = new Set<string>();
+  components.forEach((c: any) => {
+    if (c.assetId) assetIds.add(c.assetId);
+  });
+
+  const assetsMap: Record<string, any> = {};
+  if (assetIds.size > 0) {
+    const placeholders = Array.from(assetIds).map(() => '?').join(',');
+    const { results: assetResults } = await c.env.DB.prepare(
+      `SELECT * FROM assets WHERE id IN (${placeholders})`
+    )
+      .bind(...Array.from(assetIds))
+      .all();
+      
+    assetResults.forEach((a: any) => {
+      assetsMap[a.id] = a;
+    });
+  }
+
   return c.json({
     ...overlay,
-    components: JSON.parse(overlay.components as string),
+    components,
+    assets: assetsMap
   });
 });
 

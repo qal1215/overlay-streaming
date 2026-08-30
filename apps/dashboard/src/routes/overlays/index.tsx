@@ -74,7 +74,7 @@ function OverlaysListPage() {
                   <div className="flex justify-between">
                     <span>Updated</span>
                     <span className="text-text">
-                      {new Date(overlay.updated_at).toLocaleDateString()}
+                      {overlay.updated_at ? new Date(overlay.updated_at).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -82,7 +82,8 @@ function OverlaysListPage() {
 
               <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/10 mt-auto">
                 <Link
-                  to={`/overlays/${overlay.id}`}
+                  to="/overlays/$id"
+                  params={{ id: overlay.id }}
                   className="flex flex-col items-center justify-center gap-1 py-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                 >
                   <Edit size={16} />
