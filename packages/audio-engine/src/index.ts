@@ -1,3 +1,5 @@
+import { SYNTH_REGISTRY } from './synths';
+
 export class AudioManager {
   private context?: AudioContext;
   private cache = new Map<string, AudioBuffer>();
@@ -50,29 +52,16 @@ export class AudioManager {
       return;
     }
 
+    const synthFunc = SYNTH_REGISTRY[id];
+    if (synthFunc) {
+      synthFunc(this.context, this.masterVolume, localVolume);
+      return;
+    }
+
     const buffer = this.cache.get(id);
     if (!buffer) {
-      console.warn(`[AudioManager] Sound not preloaded: ${id}. Playing synthetic beep for testing.`);
-      // Synthetic fallback for testing
-      try {
-        const oscillator = this.context.createOscillator();
-        const gainNode = this.context.createGain();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(440, this.context.currentTime); // A4 note
-        oscillator.frequency.exponentialRampToValueAtTime(880, this.context.currentTime + 0.1);
-        
-        const finalVolume = localVolume * this.masterVolume;
-        gainNode.gain.setValueAtTime(finalVolume, this.context.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.5);
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(this.context.destination);
-        
-        oscillator.start();
-        oscillator.stop(this.context.currentTime + 0.5);
-      } catch (e) {
-        console.error("Synthetic beep failed", e);
-      }
+      console.warn(`[AudioManager] Sound not preloaded: ${id}. Playing fallback synthetic beep.`);
+      SYNTH_REGISTRY['synthetic:beep'](this.context, this.masterVolume, localVolume);
       return;
     }
 

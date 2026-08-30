@@ -10,6 +10,12 @@
       "database_id": "YOUR_D1_ID_HERE"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "ASSETS_BUCKET",
+      "bucket_name": "overlay-assets"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {

@@ -11,9 +11,6 @@ importers:
       turbo:
         specifier: ^2.0.0
         version: 2.10.12
-      wrangler:
-        specifier: ^4.127.1
-        version: 4.127.1(@cloudflare/workers-types@4.20260702.1)
 
   apps/api:
     dependencies:
@@ -39,6 +36,9 @@ importers:
       '@overlay/alert-engine':
         specifier: workspace:^
         version: link:../../packages/alert-engine
+      '@overlay/audio-engine':
+        specifier: workspace:^
+        version: link:../../packages/audio-engine
       '@overlay/schema':
         specifier: workspace:^
         version: link:../../packages/schema

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@overlay/alert-engine": "workspace:^",
+    "@overlay/audio-engine": "workspace:^",
     "@overlay/schema": "workspace:^",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-query": "^5.102.8",

@@ -11,12 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssetsRouteImport } from './routes/assets'
-import { Route as AudioRouteImport } from './routes/audio'
 import { Route as ObsRouteImport } from './routes/obs'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AlertsIndexRouteImport } from './routes/alerts/index'
 import { Route as AlertsIdRouteImport } from './routes/alerts/$id'
 import { Route as AlertsPresetsRouteImport } from './routes/alerts/presets'
+import { Route as AudioIndexRouteImport } from './routes/audio/index'
 import { Route as OverlaysIndexRouteImport } from './routes/overlays/index'
 import { Route as OverlaysIdRouteImport } from './routes/overlays/$id'
 
@@ -28,11 +28,6 @@ const IndexRoute = IndexRouteImport.update({
 const AssetsRoute = AssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AudioRoute = AudioRouteImport.update({
-  id: '/audio',
-  path: '/audio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ObsRoute = ObsRouteImport.update({
@@ -60,6 +55,11 @@ const AlertsPresetsRoute = AlertsPresetsRouteImport.update({
   path: '/alerts/presets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AudioIndexRoute = AudioIndexRouteImport.update({
+  id: '/audio/',
+  path: '/audio/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OverlaysIndexRoute = OverlaysIndexRouteImport.update({
   id: '/overlays/',
   path: '/overlays/',
@@ -74,38 +74,38 @@ const OverlaysIdRoute = OverlaysIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/assets': typeof AssetsRoute
-  '/audio': typeof AudioRoute
   '/obs': typeof ObsRoute
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
   '/overlays/$id': typeof OverlaysIdRoute
   '/alerts/': typeof AlertsIndexRoute
+  '/audio/': typeof AudioIndexRoute
   '/overlays/': typeof OverlaysIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assets': typeof AssetsRoute
-  '/audio': typeof AudioRoute
   '/obs': typeof ObsRoute
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
   '/overlays/$id': typeof OverlaysIdRoute
   '/alerts': typeof AlertsIndexRoute
+  '/audio': typeof AudioIndexRoute
   '/overlays': typeof OverlaysIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/assets': typeof AssetsRoute
-  '/audio': typeof AudioRoute
   '/obs': typeof ObsRoute
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
   '/overlays/$id': typeof OverlaysIdRoute
   '/alerts/': typeof AlertsIndexRoute
+  '/audio/': typeof AudioIndexRoute
   '/overlays/': typeof OverlaysIndexRoute
 }
 export interface FileRouteTypes {
@@ -113,50 +113,50 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/assets'
-    | '/audio'
     | '/obs'
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
     | '/overlays/$id'
     | '/alerts/'
+    | '/audio/'
     | '/overlays/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/assets'
-    | '/audio'
     | '/obs'
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
     | '/overlays/$id'
     | '/alerts'
+    | '/audio'
     | '/overlays'
   id:
     | '__root__'
     | '/'
     | '/assets'
-    | '/audio'
     | '/obs'
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
     | '/overlays/$id'
     | '/alerts/'
+    | '/audio/'
     | '/overlays/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssetsRoute: typeof AssetsRoute
-  AudioRoute: typeof AudioRoute
   ObsRoute: typeof ObsRoute
   SettingsRoute: typeof SettingsRoute
   AlertsIdRoute: typeof AlertsIdRoute
   AlertsPresetsRoute: typeof AlertsPresetsRoute
   OverlaysIdRoute: typeof OverlaysIdRoute
   AlertsIndexRoute: typeof AlertsIndexRoute
+  AudioIndexRoute: typeof AudioIndexRoute
   OverlaysIndexRoute: typeof OverlaysIndexRoute
 }
 
@@ -174,13 +174,6 @@ declare module '@tanstack/react-router' {
       path: '/assets'
       fullPath: '/assets'
       preLoaderRoute: typeof AssetsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/audio': {
-      id: '/audio'
-      path: '/audio'
-      fullPath: '/audio'
-      preLoaderRoute: typeof AudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/obs': {
@@ -218,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertsPresetsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/audio/': {
+      id: '/audio/'
+      path: '/audio'
+      fullPath: '/audio/'
+      preLoaderRoute: typeof AudioIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/overlays/': {
       id: '/overlays/'
       path: '/overlays'
@@ -238,13 +238,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssetsRoute: AssetsRoute,
-  AudioRoute: AudioRoute,
   ObsRoute: ObsRoute,
   SettingsRoute: SettingsRoute,
   AlertsIdRoute: AlertsIdRoute,
   AlertsPresetsRoute: AlertsPresetsRoute,
   OverlaysIdRoute: OverlaysIdRoute,
   AlertsIndexRoute: AlertsIndexRoute,
+  AudioIndexRoute: AudioIndexRoute,
   OverlaysIndexRoute: OverlaysIndexRoute,
 }
 export const routeTree = rootRouteImport
