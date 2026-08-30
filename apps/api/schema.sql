@@ -9,3 +9,27 @@ CREATE TABLE overlay_configs (
 );
 
 INSERT INTO overlay_configs (id, theme, volume) VALUES ('default_overlay', 'cyberpunk', 0.8);
+
+DROP TABLE IF EXISTS overlays;
+
+CREATE TABLE overlays (
+  id TEXT PRIMARY KEY,
+  creator_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  resolution_width INTEGER NOT NULL,
+  resolution_height INTEGER NOT NULL,
+  components TEXT NOT NULL, -- JSON string
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TABLE IF EXISTS alerts;
+
+CREATE TABLE alerts (
+  id TEXT PRIMARY KEY,
+  creator_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  preset TEXT NOT NULL, -- JSON string of AlertPreset
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

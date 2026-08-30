@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-
+import overlaysRouter from "./overlays";
+import alertsRouter from "./alerts";
 export type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
@@ -103,5 +104,8 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
 
   return c.json({ success: true, message: "Test alert triggered" });
 });
+
+adminRouter.route("/creator/:id/overlays", overlaysRouter);
+adminRouter.route("/creator/:id/alerts", alertsRouter);
 
 export default adminRouter;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type { AlertDefinition, AlertTimelineEvent } from "./types";
+import type { AlertDefinition, AlertTimelineEvent } from "@overlay/schema";
 import { alertQueue } from "./AlertQueue";
 import { audioManager } from "@overlay/audio-engine";
 import AlertRenderer from "./AlertRenderer";

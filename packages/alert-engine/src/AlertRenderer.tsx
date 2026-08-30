@@ -5,22 +5,7 @@ import MinimalAlert from "./themes/minimal/MinimalAlert";
 import ModernGlassAlert from "./themes/modern-glass/ModernGlassAlert";
 import RetroAlert from "./themes/retro/RetroAlert";
 
-export type AlertTheme =
-  | "cyberpunk"
-  | "minimal"
-  | "modern-glass"
-  | "gaming"
-  | "anime"
-  | "retro"
-  | "classic"
-  | "neon"
-  | "holographic"
-  | "comic"
-  | "luxury"
-  | "glitch"
-  | "scifi"
-  | "3d"
-  | "memes";
+import type { AlertTheme } from "@overlay/schema";
 
 export interface AlertEvent {
   id: string;

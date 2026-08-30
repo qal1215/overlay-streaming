@@ -1,5 +1,5 @@
-export * from "./AlertEngine";
+export { AlertEngine } from "./AlertEngine";
 export * from "./AlertQueue";
-export * from "./types";
+
 export * from "./alertTypes";
-export * from "./AlertRenderer";
+export { default as AlertRenderer } from "./AlertRenderer";

@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
-    "@overlay/audio-engine": "workspace:^"
+    "@overlay/audio-engine": "workspace:^",
+    "@overlay/schema": "workspace:^"
   },
   "peerDependencies": {
     "framer-motion": "^13.1.1",
