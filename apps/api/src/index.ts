@@ -60,9 +60,9 @@ app.get("/api/assets/*", async (c) => {
 });
 
 // The WebSocket entry point for the overlay
-app.get("/api/overlay/:id/ws", async (c) => {
-  const creatorId = c.req.param("id");
-  const id = c.env.OVERLAY_ROOM.idFromName(creatorId);
+app.get("/api/overlay/:overlayId/ws", async (c) => {
+  const overlayId = c.req.param("overlayId");
+  const id = c.env.OVERLAY_ROOM.idFromName(overlayId);
   const room = c.env.OVERLAY_ROOM.get(id);
   
   return room.fetch(c.req.raw);

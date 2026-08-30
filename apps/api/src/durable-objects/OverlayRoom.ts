@@ -1,13 +1,37 @@
 import { DurableObject } from "cloudflare:workers";
+import type { OverlayDefinition, OverlayRuntimeMessage } from "@overlay/schema";
 
 export class OverlayRoom extends DurableObject {
+  private currentOverlay: OverlayDefinition | null = null;
 
   constructor(ctx: DurableObjectState, env: any) {
     super(ctx, env);
+    // Ideally we'd load the initial state from D1 here if we don't have it,
+    // but the API route can also just push the state to us.
+    this.ctx.blockConcurrencyWhile(async () => {
+      const stored = await this.ctx.storage.get<OverlayDefinition>("overlay");
+      if (stored) {
+        this.currentOverlay = stored;
+      }
+    });
   }
 
   async fetch(request: Request) {
     const url = new URL(request.url);
+
+    // Endpoint for the API to push overlay updates
+    if (request.method === "POST" && url.pathname === "/update") {
+      const overlay = (await request.json()) as OverlayDefinition;
+      this.currentOverlay = overlay;
+      await this.ctx.storage.put("overlay", overlay);
+      
+      const message: OverlayRuntimeMessage = {
+        type: "overlay:update",
+        overlay,
+      };
+      
+      return this.broadcast(message);
+    }
 
     if (request.method === "POST" && url.pathname === "/broadcast") {
       const event = await request.json();
@@ -24,6 +48,15 @@ export class OverlayRoom extends DurableObject {
     const server = webSocketPair[1];
 
     this.ctx.acceptWebSocket(server);
+    
+    // Send initial state upon connection
+    if (this.currentOverlay) {
+      const initMessage: OverlayRuntimeMessage = {
+        type: "overlay:init",
+        overlay: this.currentOverlay,
+      };
+      server.send(JSON.stringify(initMessage));
+    }
 
     return new Response(null, {
       status: 101,
@@ -32,7 +65,7 @@ export class OverlayRoom extends DurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
-    // We can handle messages from OBS here if needed (e.g., ping/pong)
+    // Handle messages from OBS if needed
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean) {
@@ -43,7 +76,6 @@ export class OverlayRoom extends DurableObject {
     // Automatically handled by Cloudflare
   }
 
-  // Custom method to broadcast an alert to all connected OBS instances
   async broadcast(event: any) {
     const message = JSON.stringify(event);
     const sockets = this.ctx.getWebSockets();

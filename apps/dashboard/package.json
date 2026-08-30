@@ -23,7 +23,8 @@
     "react-dom": "^19.2.8",
     "react-rnd": "^10.5.3",
     "tailwindcss": "^4.1.18",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@overlay/overlay-renderer": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/router-plugin": "^1.168.35",

@@ -39,6 +39,9 @@ importers:
       '@overlay/audio-engine':
         specifier: workspace:^
         version: link:../../packages/audio-engine
+      '@overlay/overlay-renderer':
+        specifier: workspace:^
+        version: link:../../packages/overlay-renderer
       '@overlay/schema':
         specifier: workspace:^
         version: link:../../packages/schema
@@ -109,6 +112,9 @@ importers:
       '@overlay/audio-engine':
         specifier: workspace:^
         version: link:../../packages/audio-engine
+      '@overlay/overlay-renderer':
+        specifier: workspace:^
+        version: link:../../packages/overlay-renderer
       '@overlay/schema':
         specifier: workspace:^
         version: link:../../packages/schema
@@ -209,6 +215,31 @@ importers:
         version: 7.0.2
 
   packages/audio-engine: {}
+
+  packages/overlay-renderer:
+    dependencies:
+      '@overlay/schema':
+        specifier: workspace:*
+        version: link:../schema
+      lucide-react:
+        specifier: ^0.475.0
+        version: 0.475.0(react@19.2.8)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.10
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.4
+        version: 19.2.5(@types/react@19.2.18)
+      typescript:
+        specifier: ~5.7.2
+        version: 5.7.3
 
   packages/schema:
     dependencies:
@@ -2094,6 +2125,11 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
+  lucide-react@0.475.0:
+    resolution: {integrity: sha512-NJzvVu1HwFVeZ+Gwq2q00KygM1aBhy/ZrhY9FsAgJtpB+E4R7uxRk9M2iKvHa6/vNxZydIB59htha4c2vvwvVg==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   lucide-react@1.37.0:
     resolution: {integrity: sha512-LPsB4rD1TD6wZu1djKOf9vUnS1jTNaHbolXebXDgiTdb6jeA1agIJhJsIybCmjKmQClcOaal1o1OaiYahEftyQ==}
     peerDependencies:
@@ -2391,6 +2427,11 @@ packages:
 
   turbo@2.10.12:
     resolution: {integrity: sha512-AswgMPnpOoaVZHrrSBejETzEbuIA69OVGwfkHwfrY0A23VjWXBANzgq9+OymWOHAIArB7D1+1z498WY8fGg1Jw==}
+    hasBin: true
+
+  typescript@5.7.3:
+    resolution: {integrity: sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==}
+    engines: {node: '>=14.17'}
     hasBin: true
 
   typescript@5.9.3:
@@ -4260,6 +4301,10 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
+  lucide-react@0.475.0(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+
   lucide-react@1.37.0(react@19.2.8):
     dependencies:
       react: 19.2.8
@@ -4602,6 +4647,8 @@ snapshots:
       '@turbo/linux-arm64': 2.10.12
       '@turbo/windows-64': 2.10.12
       '@turbo/windows-arm64': 2.10.12
+
+  typescript@5.7.3: {}
 
   typescript@5.9.3: {}
 
