@@ -25,6 +25,30 @@ export default function OverlayRuntime({
     }
   }, [isPreview]);
 
+  // Fetch initial configuration
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const creatorId = urlParams.get("creatorId") || "default_creator";
+        const apiHost = import.meta.env.VITE_API_URL || "http://localhost:8787";
+        
+        const response = await fetch(`${apiHost}/api/admin/creator/${creatorId}/config`);
+        if (response.ok) {
+          const config = await response.json();
+          // Adjust volume if configured
+          if (config.volume !== undefined) {
+            audioManager.setMasterVolume(config.volume);
+          }
+        }
+      } catch (err) {
+        console.error("[Overlay] Failed to fetch initial config:", err);
+      }
+    };
+    
+    fetchConfig();
+  }, []);
+
   // Connect to Cloudflare Durable Object WebSocket
   useEffect(() => {
     let ws: WebSocket;
@@ -61,6 +85,11 @@ export default function OverlayRuntime({
           if (payload.type === "NEW_ALERT") {
             console.log("[Overlay WS] Received alert:", payload.data);
             alertQueue.push(payload.data);
+          } else if (payload.type === "CONFIG_UPDATED") {
+            console.log("[Overlay WS] Config updated. Reloading...", payload.data);
+            // The simplest way to apply radical theme changes safely is to reload the overlay.
+            // Alternatively, we could save config to a state context.
+            window.location.reload();
           }
         } catch (err) {
           console.error("[Overlay WS] Failed to parse message:", err);
