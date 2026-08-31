@@ -81,10 +81,13 @@ function OverlayEditorPage() {
     }
 
     const mockEvent: AlertEvent = {
-      id: `evt_${Date.now()}`,
+      eventId: `evt_${Date.now()}`,
+      creatorId: "default_creator",
+      source: "dashboard",
       type: "donation",
       timestamp: Date.now(),
-      actor: { name: "TestUser", amount: "$50" },
+      actor: { name: "TestUser" },
+      donation: { amount: "$50" },
       message: "This is a local canvas test!",
     };
 

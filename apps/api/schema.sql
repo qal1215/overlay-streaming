@@ -64,3 +64,27 @@ CREATE TABLE assets (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+DROP TABLE IF EXISTS processed_events;
+
+CREATE TABLE processed_events (
+  event_id TEXT NOT NULL,
+  creator_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  processed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (creator_id, source, event_id)
+);
+
+DROP TABLE IF EXISTS alert_triggers;
+
+CREATE TABLE alert_triggers (
+  id TEXT PRIMARY KEY,
+  creator_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  alert_id TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(creator_id, source, event_type)
+);

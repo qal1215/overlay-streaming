@@ -80,22 +80,43 @@ export const AlertDefinitionSchema = z.object({
 export type AlertDefinition = z.infer<typeof AlertDefinitionSchema>;
 
 export const AlertEventSchema = z.object({
-  id: z.string(),
+  eventId: z.string(),
+  creatorId: z.string(),
+  source: z.string(),
   type: z.enum(["donation", "follow", "subscription", "raid", "custom"]),
   timestamp: z.number(),
   actor: z.object({
     name: z.string(),
-    amount: z.string().optional(),
+  }).optional(),
+  donation: z.object({
+    amount: z.string(),
     currency: z.string().optional(),
   }).optional(),
+  metadata: z.record(z.any()).optional(),
   message: z.string().optional(),
-  alert: z.object({
-    presetId: z.string().optional(),
-    duration: z.number().optional(),
-  }).optional(),
 });
 
 export type AlertEvent = z.infer<typeof AlertEventSchema>;
+
+export const ResolvedAlertEventSchema = z.object({
+  event: AlertEventSchema,
+  alertId: z.string(),
+});
+
+export type ResolvedAlertEvent = z.infer<typeof ResolvedAlertEventSchema>;
+
+export const AlertTriggerSchema = z.object({
+  id: z.string(),
+  creatorId: z.string(),
+  source: z.string(),
+  eventType: z.string(),
+  alertId: z.string(),
+  enabled: z.boolean(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+export type AlertTrigger = z.infer<typeof AlertTriggerSchema>;
 
 export const AlertPlacementSchema = z.object({
   x: z.number(),

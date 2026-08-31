@@ -8,6 +8,7 @@ export type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
   ASSETS_BUCKET: R2Bucket;
+  WEBHOOK_SECRET?: string;
 };
 
 const adminRouter = new Hono<{ Bindings: Bindings }>();
@@ -69,20 +70,20 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
   const creatorId = c.req.param("id");
   const body = await c.req.json().catch(() => ({}));
 
-  // Create a proper AlertEvent based on the new schema
   const mockEvent = {
-    id: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    eventId: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    creatorId: creatorId,
+    source: "dashboard",
     type: "donation" as const,
     timestamp: Date.now(),
     actor: {
       name: body.name || "Test Actor",
+    },
+    donation: {
       amount: body.amount || "$10.00",
       currency: body.currency || "USD",
     },
     message: body.message || "This is a test alert from the admin dashboard!",
-    alert: {
-      presetId: body.presetId || undefined,
-    },
   };
 
   // The client connects to DO using overlayId, so we must broadcast to the correct overlay
@@ -94,21 +95,30 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
       method: "POST",
       body: JSON.stringify({
         type: "alert:event",
-        event: mockEvent,
+        resolved: {
+          event: mockEvent,
+          alertId: body.presetId || "", // Temporary fallback, but real tests should send presetId
+        },
       }),
     }));
   } else {
     // Fallback to legacy AlertService behavior if no overlayId is provided
     const alertService = new AlertService(c.env.DB, c.env.OVERLAY_ROOM);
-    await alertService.dispatchAlert(creatorId, mockEvent);
+    await alertService.dispatchAlert(creatorId, {
+      event: mockEvent,
+      alertId: body.presetId || "",
+    });
   }
 
   return c.json({ success: true, message: "Test alert triggered", event: mockEvent });
 });
 
+import triggersRouter from "./triggers";
+
 adminRouter.route("/creator/:id/overlays", overlaysRouter);
 adminRouter.route("/creator/:id/alerts", alertsRouter);
 adminRouter.route("/creator/:id/audio", audioRouter);
 adminRouter.route("/creator/:id/assets", assetsRouter);
+adminRouter.route("/creator/:id/triggers", triggersRouter);
 
 export default adminRouter;

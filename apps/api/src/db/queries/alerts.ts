@@ -1,6 +1,6 @@
 export async function getAlerts(db: D1Database, creatorId: string) {
   const { results } = await db
-    .prepare("SELECT id, creator_id, name, created_at, updated_at FROM alerts WHERE creator_id = ? ORDER BY updated_at DESC")
+    .prepare("SELECT id, creator_id, name, preset, created_at, updated_at FROM alerts WHERE creator_id = ? ORDER BY updated_at DESC")
     .bind(creatorId)
     .all();
   return results;

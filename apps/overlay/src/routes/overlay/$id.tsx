@@ -7,12 +7,12 @@ import type {
   AlertEvent,
   AlertInstance,
   AlertPlacement,
+  ResolvedAlertEvent,
 } from "@overlay/schema";
 import { AlertEngine, alertQueue } from "@overlay/alert-engine";
 import { AudioSetup } from "../../components/AudioSetup";
 import { API_URL } from "../../lib/config";
 
-// Removed mocked resolveAlertPreset
 export const Route = createFileRoute("/overlay/$id")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -29,30 +29,29 @@ function OverlayRuntimeRoute() {
   const [scale, setScale] = useState(1);
   const runtimeStateRef = useRef<any>(null); // To always access latest runtime state in handleAlertEvent
 
-  const handleAlertEvent = async (event: AlertEvent) => {
-    console.log("[AlertRuntime] Received alert:event", event.id || "unknown");
+  const handleAlertEvent = async (resolvedEvent: ResolvedAlertEvent) => {
+    const { event, alertId } = resolvedEvent;
+    console.log("[AlertRuntime] Received alert:event", event.eventId || "unknown", "mapped to", alertId);
+    
     const runtimeState = runtimeStateRef.current;
     if (!runtimeState || !runtimeState.overlay) return;
     const overlay = runtimeState.overlay;
 
-    // Find the alert component that matches this event.
-    // For Phase 10: One active AlertComponent per event type per overlay.
-    // Currently fallback to any alert component or match presetId if given.
+    // Find the alert component that matches this alertId strictly.
     const targetComponent = overlay.components.find(
       (c: any) =>
         c.type === "alert" &&
-        (!event.alert?.presetId || c.alertId === event.alert.presetId),
+        c.alertId === alertId,
     );
 
     if (!targetComponent) {
       console.warn(
-        "[AlertRuntime] No AlertComponent found for event on this overlay",
-        event,
+        "[AlertRuntime] No AlertComponent found on this overlay for alertId:",
+        alertId
       );
       return;
     }
 
-    const alertId = (targetComponent as any).alertId;
     console.log("[AlertRuntime] Resolved AlertComponent", { alertId });
 
     // Zero-HTTP local lookup of the alert definition

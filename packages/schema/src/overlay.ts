@@ -17,7 +17,7 @@ export const OverlayDefinitionSchema = z.object({
 
 export type OverlayDefinition = z.infer<typeof OverlayDefinitionSchema>;
 
-import { AlertDefinitionSchema, AlertEventSchema } from "./alert";
+import { AlertDefinitionSchema, AlertEventSchema, ResolvedAlertEventSchema } from "./alert";
 
 export const OverlayRuntimeStateSchema = z.object({
   overlay: OverlayDefinitionSchema,
@@ -45,7 +45,7 @@ export const OverlayRuntimeMessageSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("alert:event"),
-    event: AlertEventSchema,
+    resolved: ResolvedAlertEventSchema,
   }),
   z.object({
     type: z.literal("alert:update"),

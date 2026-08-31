@@ -2,12 +2,14 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import adminRouter from "./routes/admin";
+import webhooksRouter from "./routes/webhooks";
 import { OverlayRoom } from "./durable-objects/OverlayRoom";
 
 type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
   ASSETS_BUCKET: R2Bucket;
+  WEBHOOK_SECRET?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -21,6 +23,7 @@ app.use(
 );
 
 app.route("/api/admin", adminRouter);
+app.route("/api/webhooks", webhooksRouter);
 
 // Serve R2 Assets by Object Key OR Asset ID
 app.get("/api/assets/*", async (c) => {
