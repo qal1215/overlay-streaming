@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react'
 // Import the actual AlertRenderer from our overlay engine for a 1:1 Live Preview!
 import { AlertRenderer } from '@overlay/alert-engine'
 import type { AlertPreset, AlertTheme } from '@overlay/schema'
+import { audioManager } from '@overlay/audio-engine'
+import { API_URL } from '../../api/client'
 
 export const Route = createFileRoute('/alerts/$id')({
   component: AlertEditorPage,
@@ -41,9 +43,19 @@ function AlertEditorPage() {
 
   const handlePlayPreview = () => {
     setIsPreviewVisible(false)
-    setTimeout(() => {
+    setTimeout(async () => {
       setPreviewKey(prev => prev + 1)
       setIsPreviewVisible(true)
+      
+      if (preset.audio?.soundId && audioFiles) {
+        const soundFile = audioFiles.find((f: any) => f.id === preset.audio!.soundId);
+        if (soundFile) {
+          const soundUrl = `${API_URL}${soundFile.url}`;
+          await audioManager.initialize();
+          await audioManager.preload(soundUrl, soundUrl);
+          audioManager.play(soundUrl, preset.audio.volume ?? 0.8);
+        }
+      }
       
       // Auto hide after 5 seconds to simulate an alert timeline
       setTimeout(() => {

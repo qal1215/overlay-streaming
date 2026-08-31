@@ -21,7 +21,11 @@ export class AudioManager {
     }
     
     if (this.context.state === "suspended") {
-      await this.context.resume();
+      try {
+        await this.context.resume();
+      } catch (err) {
+        console.warn("[AudioManager] Failed to resume AudioContext. (Autoplay blocked?)", err);
+      }
     }
   }
 

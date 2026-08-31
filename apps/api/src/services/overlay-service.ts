@@ -66,14 +66,6 @@ export class OverlayService {
       if (c.assetId) assetIds.add(c.assetId);
     });
 
-    const assetsMap: Record<string, any> = {};
-    if (assetIds.size > 0) {
-      const assetResults = await assetQueries.getAssetsByIds(this.db, Array.from(assetIds));
-      assetResults.forEach((a: any) => {
-        assetsMap[a.id] = a;
-      });
-    }
-
     const alertsMap: Record<string, any> = {};
     const alertIds = new Set<string>();
     overlay.components.forEach((c: any) => {
@@ -83,7 +75,19 @@ export class OverlayService {
     if (alertIds.size > 0) {
       const alertResults = await alertQueries.getAlertsByIds(this.db, Array.from(alertIds));
       alertResults.forEach((a: any) => {
-        alertsMap[a.id] = { ...a, preset: JSON.parse(a.preset as string) };
+        const preset = JSON.parse(a.preset as string);
+        alertsMap[a.id] = { ...a, preset };
+        // Extract assets from alert preset
+        if (preset.audio?.soundId) assetIds.add(preset.audio.soundId);
+        // If there are image URLs in the preset we would add them here too
+      });
+    }
+
+    const assetsMap: Record<string, any> = {};
+    if (assetIds.size > 0) {
+      const assetResults = await assetQueries.getAssetsByIds(this.db, Array.from(assetIds));
+      assetResults.forEach((a: any) => {
+        assetsMap[a.id] = a;
       });
     }
 
@@ -104,14 +108,6 @@ export class OverlayService {
       if (c.assetId) assetIds.add(c.assetId);
     });
 
-    const assetsMap: Record<string, any> = {};
-    if (assetIds.size > 0) {
-      const assetResults = await assetQueries.getAssetsByIds(this.db, Array.from(assetIds));
-      assetResults.forEach((a: any) => {
-        assetsMap[a.id] = a;
-      });
-    }
-
     const alertsMap: Record<string, any> = {};
     const alertIds = new Set<string>();
     overlay.components.forEach((c: any) => {
@@ -121,7 +117,17 @@ export class OverlayService {
     if (alertIds.size > 0) {
       const alertResults = await alertQueries.getAlertsByIds(this.db, Array.from(alertIds));
       alertResults.forEach((a: any) => {
-        alertsMap[a.id] = { ...a, preset: JSON.parse(a.preset as string) };
+        const preset = JSON.parse(a.preset as string);
+        alertsMap[a.id] = { ...a, preset };
+        if (preset.audio?.soundId) assetIds.add(preset.audio.soundId);
+      });
+    }
+
+    const assetsMap: Record<string, any> = {};
+    if (assetIds.size > 0) {
+      const assetResults = await assetQueries.getAssetsByIds(this.db, Array.from(assetIds));
+      assetResults.forEach((a: any) => {
+        assetsMap[a.id] = a;
       });
     }
 
