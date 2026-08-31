@@ -37,6 +37,13 @@ function OverlayRuntimeRoute() {
     );
   }
 
+  const resolveAssetUrl = (assetId?: string) => {
+    if (!assetId) return "";
+    const asset = overlay.assets?.[assetId];
+    // In production, we'd use an env var or a relative path, but localhost:8787 is used here for dev
+    return asset ? `http://localhost:8787${asset.url}` : "";
+  };
+
   return (
     <>
       {/* Optional dev-only connection status badge in the corner */}
@@ -69,7 +76,10 @@ function OverlayRuntimeRoute() {
               // visibility: comp.visible === false ? 'hidden' : 'visible'
             }}
           >
-            <OverlayComponentRenderer component={comp as OverlayComponent} />
+            <OverlayComponentRenderer 
+              component={comp as OverlayComponent} 
+              resolveAssetUrl={resolveAssetUrl} 
+            />
           </div>
         ))}
       </div>

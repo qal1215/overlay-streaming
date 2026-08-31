@@ -30,22 +30,28 @@ overlaysRouter.get("/:overlayId", async (c) => {
 overlaysRouter.patch("/:overlayId", async (c) => {
   const service = new OverlayService(c.env.DB);
   const body = await c.req.json().catch(() => ({}));
+  const overlayId = c.req.param("overlayId");
+  const creatorId = c.req.param("id");
   try {
-    const result = await service.updateOverlay(c.req.param("id") as string, c.req.param("overlayId") as string, body);
+    await service.updateOverlay(creatorId, overlayId, body);
+    
+    // Fetch the updated overlay
+    const updatedOverlay = await service.getOverlay(creatorId, overlayId);
+    if (!updatedOverlay) throw new Error("Overlay not found after update");
     
     // Push the updated overlay to the Durable Object
-    const doId = c.env.OVERLAY_ROOM.idFromName(result.id);
+    const doId = c.env.OVERLAY_ROOM.idFromName(overlayId);
     const room = c.env.OVERLAY_ROOM.get(doId);
     
     const req = new Request(`http://do/update`, {
       method: "POST",
-      body: JSON.stringify(result),
+      body: JSON.stringify(updatedOverlay),
       headers: { "Content-Type": "application/json" }
     });
     // Fire and forget (don't block the API response)
     c.executionCtx.waitUntil(room.fetch(req));
 
-    return c.json(result);
+    return c.json(updatedOverlay);
   } catch (e: any) {
     if (e.message === "Overlay not found") return c.json({ error: e.message }, 404);
     return c.json({ error: e.message }, 500);

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../packages/overlay-renderer/src";
 
 @theme {
   --color-background: #0f172a;

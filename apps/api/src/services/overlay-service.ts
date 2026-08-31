@@ -76,6 +76,28 @@ export class OverlayService {
     return { ...overlay, assets: assetsMap };
   }
 
+  async getOverlayById(overlayId: string) {
+    const row = await overlayQueries.getOverlayById(this.db, overlayId);
+    if (!row) return null;
+
+    const overlay = this.mapRowToOverlayDefinition(row);
+
+    const assetIds = new Set<string>();
+    overlay.components.forEach((c: any) => {
+      if (c.assetId) assetIds.add(c.assetId);
+    });
+
+    const assetsMap: Record<string, any> = {};
+    if (assetIds.size > 0) {
+      const assetResults = await assetQueries.getAssetsByIds(this.db, Array.from(assetIds));
+      assetResults.forEach((a: any) => {
+        assetsMap[a.id] = a;
+      });
+    }
+
+    return { ...overlay, assets: assetsMap };
+  }
+
   async updateOverlay(creatorId: string, overlayId: string, body: any) {
     const current = await overlayQueries.getOverlay(this.db, overlayId, creatorId);
     if (!current) throw new Error("Overlay not found");

@@ -10,6 +10,7 @@ export const OverlayDefinitionSchema = z.object({
   height: z.number(),
   enabled: z.boolean(),
   components: z.array(OverlayComponentSchema),
+  assets: z.record(z.any()).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

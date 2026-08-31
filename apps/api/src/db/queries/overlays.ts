@@ -36,6 +36,14 @@ export async function getOverlay(db: D1Database, id: string, creatorId: string) 
   return results.length > 0 ? results[0] : null;
 }
 
+export async function getOverlayById(db: D1Database, id: string) {
+  const { results } = await db
+    .prepare("SELECT * FROM overlays WHERE id = ?")
+    .bind(id)
+    .all();
+  return results.length > 0 ? results[0] : null;
+}
+
 export async function updateOverlay(
   db: D1Database,
   id: string,

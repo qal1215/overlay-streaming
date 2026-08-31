@@ -65,6 +65,20 @@ app.get("/api/overlay/:overlayId/ws", async (c) => {
   const id = c.env.OVERLAY_ROOM.idFromName(overlayId);
   const room = c.env.OVERLAY_ROOM.get(id);
   
+  // Ensure the DO has the latest overlay state from DB without broadcasting
+  const { OverlayService } = await import("./services/overlay-service");
+  const service = new OverlayService(c.env.DB);
+  const overlay = await service.getOverlayById(overlayId);
+  
+  if (overlay) {
+    const req = new Request(`http://do/init`, {
+      method: "POST",
+      body: JSON.stringify(overlay),
+      headers: { "Content-Type": "application/json" }
+    });
+    await room.fetch(req);
+  }
+  
   return room.fetch(c.req.raw);
 });
 
