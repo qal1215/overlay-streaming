@@ -31,7 +31,7 @@ export function OverlayCanvas({
     >
       <div style={{ width: width * scale, height: height * scale, position: "relative" }}>
         <div
-          className="bg-black/40 border border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] absolute top-0 left-0 overflow-hidden backdrop-blur-sm"
+          className="bg-black/40 border border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] absolute top-0 left-0 overflow-hidden"
           style={{
             width: `${width}px`,
             height: `${height}px`,

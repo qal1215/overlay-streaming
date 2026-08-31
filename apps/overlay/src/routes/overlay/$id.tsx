@@ -146,9 +146,11 @@ function OverlayRuntimeRoute() {
         style={{ 
           width: `${overlay.width}px`, 
           height: `${overlay.height}px`,
-          transform: `scale(${scale})`,
+          transform: scale === 1 ? 'none' : `scale(${scale})`,
           transformOrigin: "top left",
-          position: 'relative'
+          position: 'relative',
+          willChange: scale === 1 ? 'auto' : 'transform',
+          backfaceVisibility: 'hidden'
         }}
       >
         {overlay.components.map(comp => (
@@ -182,12 +184,14 @@ function OverlayRuntimeRoute() {
         style={{ 
           width: `${overlay.width}px`, 
           height: `${overlay.height}px`,
-          transform: `scale(${scale})`,
+          transform: scale === 1 ? 'none' : `scale(${scale})`,
           transformOrigin: "top left",
           position: 'absolute',
           top: 0,
           left: 0,
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          willChange: scale === 1 ? 'auto' : 'transform',
+          backfaceVisibility: 'hidden'
         }}
       >
         <AlertEngine />
