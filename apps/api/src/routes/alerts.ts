@@ -31,8 +31,33 @@ alertsRouter.patch("/:alertId", async (c) => {
   const service = new AlertService(c.env.DB);
   const body = await c.req.json().catch(() => ({}));
   try {
-    const result = await service.updateAlert(c.req.param("id"), c.req.param("alertId"), body);
-    return c.json({ success: true, message: "Alert updated" });
+    const creatorId = c.req.param("id");
+    const alertId = c.req.param("alertId");
+    const result = await service.updateAlert(creatorId, alertId, body);
+    
+    // Invalidate DO cache for any overlay using this alert
+    const { OverlayService } = await import("../services/overlay-service");
+    const overlayService = new OverlayService(c.env.DB);
+    const overlays = await overlayService.listOverlays(creatorId);
+    
+    for (const overlay of overlays) {
+      const hasAlert = overlay.components.some((comp: any) => comp.type === "alert" && comp.alertId === alertId);
+      if (hasAlert) {
+        const updatedOverlay = await overlayService.getOverlay(creatorId, overlay.id);
+        if (updatedOverlay) {
+          const doId = c.env.OVERLAY_ROOM.idFromName(overlay.id);
+          const room = c.env.OVERLAY_ROOM.get(doId);
+          const req = new Request(`http://do/update`, {
+            method: "POST",
+            body: JSON.stringify(updatedOverlay),
+            headers: { "Content-Type": "application/json" }
+          });
+          c.executionCtx.waitUntil(room.fetch(req));
+        }
+      }
+    }
+
+    return c.json({ success: true, message: "Alert updated and broadcasted" });
   } catch (e: any) {
     if (e.message === "Alert not found") return c.json({ error: e.message }, 404);
     if (e.message === "Invalid preset JSON") return c.json({ error: e.message }, 400);

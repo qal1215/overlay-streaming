@@ -1,22 +1,36 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { OverlayComponentRenderer } from '@overlay/overlay-renderer'
-import { useLayoutEffect, useState, useRef } from 'react'
-import { useOverlayConnection } from '../../hooks/useOverlayConnection'
-import type { OverlayComponent, AlertEvent, AlertInstance, AlertPlacement } from '@overlay/schema'
-import { AlertEngine, alertQueue } from '@overlay/alert-engine'
+import { createFileRoute } from "@tanstack/react-router";
+import { OverlayComponentRenderer } from "@overlay/overlay-renderer";
+import { useLayoutEffect, useState, useRef } from "react";
+import { useOverlayConnection } from "../../hooks/useOverlayConnection";
+import type {
+  OverlayComponent,
+  AlertEvent,
+  AlertInstance,
+  AlertPlacement,
+} from "@overlay/schema";
+import { AlertEngine, alertQueue } from "@overlay/alert-engine";
+import { AudioSetup } from "../../components/AudioSetup";
+import { API_URL } from "../../lib/config";
 
 // Removed mocked resolveAlertPreset
-export const Route = createFileRoute('/overlay/$id')({
+export const Route = createFileRoute("/overlay/$id")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      runtime: search.runtime as string | undefined,
+    };
+  },
   component: OverlayRuntimeRoute,
-})
+});
 
 function OverlayRuntimeRoute() {
-  const { id } = Route.useParams()
+  const { id } = Route.useParams();
+  const { runtime } = Route.useSearch();
+  const isObs = runtime === 'obs';
   const [scale, setScale] = useState(1);
   const runtimeStateRef = useRef<any>(null); // To always access latest runtime state in handleAlertEvent
 
   const handleAlertEvent = async (event: AlertEvent) => {
-    console.log("Received alert:event", event);
+    console.log("[AlertRuntime] Received alert:event", event.id || "unknown");
     const runtimeState = runtimeStateRef.current;
     if (!runtimeState || !runtimeState.overlay) return;
     const overlay = runtimeState.overlay;
@@ -25,22 +39,36 @@ function OverlayRuntimeRoute() {
     // For Phase 10: One active AlertComponent per event type per overlay.
     // Currently fallback to any alert component or match presetId if given.
     const targetComponent = overlay.components.find(
-      (c: any) => c.type === 'alert' && (!event.alert?.presetId || c.alertId === event.alert.presetId)
+      (c: any) =>
+        c.type === "alert" &&
+        (!event.alert?.presetId || c.alertId === event.alert.presetId),
     );
 
     if (!targetComponent) {
-      console.warn("No AlertComponent found for event on this overlay", event);
+      console.warn(
+        "[AlertRuntime] No AlertComponent found for event on this overlay",
+        event,
+      );
       return;
     }
 
-    // Zero-HTTP local lookup of the alert definition
     const alertId = (targetComponent as any).alertId;
+    console.log("[AlertRuntime] Resolved AlertComponent", { alertId });
+
+    // Zero-HTTP local lookup of the alert definition
     let alertDef = runtimeState.alerts[alertId];
-    
+
     if (!alertDef) {
-      console.warn("AlertDefinition not found in preloaded runtime state for alertId:", alertId);
+      console.warn(
+        "[AlertRuntime] AlertDefinition not found in preloaded runtime state for alertId:",
+        alertId,
+      );
       return;
     }
+
+    console.log("[AlertRuntime] Resolved AlertDefinition", {
+      name: alertDef.name,
+    });
 
     // Clone it so we don't mutate the cached version
     alertDef = JSON.parse(JSON.stringify(alertDef));
@@ -54,36 +82,50 @@ function OverlayRuntimeRoute() {
     };
 
     // Use event duration if provided, else fallback to timeline duration or default
-    const duration = event.alert?.duration || alertDef.timeline?.duration || 6000;
-    
+    const duration =
+      event.alert?.duration || alertDef.timeline?.duration || 6000;
+
     const resolveAssetUrl = (assetId?: string) => {
       if (!assetId) return "";
       const asset = overlay.assets?.[assetId];
-      const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8787';
-      return asset ? `${apiHost}${asset.url}` : "";
+      return asset ? `${API_URL}${asset.url}` : "";
     };
 
-    const soundUrl = alertDef.preset.audio?.soundId ? resolveAssetUrl(alertDef.preset.audio.soundId) : undefined;
+    const resolvedSoundUrl = alertDef.preset.audio?.soundId
+      ? resolveAssetUrl(alertDef.preset.audio.soundId)
+      : "";
+    const audioSource = resolvedSoundUrl
+      ? { type: "asset" as const, url: resolvedSoundUrl }
+      : { type: "synthetic" as const, preset: "beep" };
 
-    // Ensure timeline exists
-    if (!alertDef.timeline || !alertDef.timeline.events || alertDef.timeline.events.length === 0) {
+    console.log("[AlertRuntime] Resolved audio", audioSource);
+
+    if (
+      !alertDef.timeline ||
+      !alertDef.timeline.events ||
+      alertDef.timeline.events.length === 0
+    ) {
       alertDef.timeline = {
         duration,
         events: [
-          { at: 0, type: "enter", sound: soundUrl },
+          { at: 0, type: "enter" },
           { at: 300, type: "impact" },
           { at: duration - 500, type: "exit" },
-        ]
+        ],
       };
-    } else if (event.alert?.duration) {
-      // If duration was overridden, adjust the exit event if it exists
-      alertDef.timeline.duration = duration;
-      const exitEvent = alertDef.timeline.events.find((e: any) => e.type === "exit");
-      if (exitEvent) {
-        exitEvent.at = duration - 500;
+    } else {
+      if (event.alert?.duration) {
+        // If duration was overridden, adjust the exit event if it exists
+        alertDef.timeline.duration = duration;
+        const exitEvent = alertDef.timeline.events.find(
+          (e: any) => e.type === "exit",
+        );
+        if (exitEvent) {
+          exitEvent.at = duration - 500;
+        }
       }
     }
-    
+
     const placement: AlertPlacement = {
       x: targetComponent.position.x,
       y: targetComponent.position.y,
@@ -96,13 +138,19 @@ function OverlayRuntimeRoute() {
       event,
       definition: alertDef,
       placement,
+      audio: audioSource,
     };
-    
+
+    console.log("[AlertRuntime] Creating AlertInstance");
+
     alertQueue.push(instance);
   };
 
-  const { connectionState, runtimeState } = useOverlayConnection(id, handleAlertEvent)
-  
+  const { connectionState, runtimeState } = useOverlayConnection(
+    id,
+    handleAlertEvent,
+  );
+
   // Keep runtimeStateRef updated
   useLayoutEffect(() => {
     runtimeStateRef.current = runtimeState;
@@ -112,17 +160,17 @@ function OverlayRuntimeRoute() {
 
   useLayoutEffect(() => {
     if (!overlay) return;
-    
+
     const handleResize = () => {
       const scaleX = window.innerWidth / overlay.width;
       const scaleY = window.innerHeight / overlay.height;
       setScale(Math.min(scaleX, scaleY));
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     handleResize();
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [overlay?.width, overlay?.height]);
 
   if (!overlay) {
@@ -137,36 +185,36 @@ function OverlayRuntimeRoute() {
   const resolveAssetUrl = (assetId?: string) => {
     if (!assetId) return "";
     const asset = overlay.assets?.[assetId];
-    // Use api host from env or fallback
-    const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8787';
-    return asset ? `${apiHost}${asset.url}` : "";
+    return asset ? `${API_URL}${asset.url}` : "";
   };
 
   return (
     <>
       {/* Optional dev-only connection status badge in the corner */}
-      {connectionState !== 'connected' && (
+      {connectionState !== "connected" && (
         <div className="absolute top-2 right-2 px-2 py-1 bg-red-500/80 text-white text-xs font-bold rounded z-50">
           {connectionState.toUpperCase()}
         </div>
       )}
-      
-      <div 
-        style={{ 
-          width: `${overlay.width}px`, 
+
+      {!isObs && <AudioSetup />}
+
+      <div
+        style={{
+          width: `${overlay.width}px`,
           height: `${overlay.height}px`,
-          transform: scale === 1 ? 'none' : `scale(${scale})`,
+          transform: scale === 1 ? "none" : `scale(${scale})`,
           transformOrigin: "top left",
-          position: 'relative',
-          willChange: scale === 1 ? 'auto' : 'transform',
-          backfaceVisibility: 'hidden'
+          position: "relative",
+          willChange: scale === 1 ? "auto" : "transform",
+          backfaceVisibility: "hidden",
         }}
       >
-        {overlay.components.map(comp => (
-          <div 
+        {overlay.components.map((comp) => (
+          <div
             key={comp.id}
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: `${comp.position.x}px`,
               top: `${comp.position.y}px`,
               width: `${comp.size.width}px`,
@@ -176,35 +224,35 @@ function OverlayRuntimeRoute() {
               // visibility: comp.visible === false ? 'hidden' : 'visible'
             }}
           >
-            <OverlayComponentRenderer 
-              component={comp as OverlayComponent} 
-              resolveAssetUrl={resolveAssetUrl} 
+            <OverlayComponentRenderer
+              component={comp as OverlayComponent}
+              resolveAssetUrl={resolveAssetUrl}
             />
           </div>
         ))}
       </div>
-      
+
       {/* 
         Render the AlertEngine outside the scaled container, or inside. 
         Actually, if we put it inside the scaled container, the placement coordinates 
         (which match the Component) will be scaled automatically!
       */}
-      <div 
-        style={{ 
-          width: `${overlay.width}px`, 
+      <div
+        style={{
+          width: `${overlay.width}px`,
           height: `${overlay.height}px`,
-          transform: scale === 1 ? 'none' : `scale(${scale})`,
+          transform: scale === 1 ? "none" : `scale(${scale})`,
           transformOrigin: "top left",
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           left: 0,
-          pointerEvents: 'none',
-          willChange: scale === 1 ? 'auto' : 'transform',
-          backfaceVisibility: 'hidden'
+          pointerEvents: "none",
+          willChange: scale === 1 ? "auto" : "transform",
+          backfaceVisibility: "hidden",
         }}
       >
         <AlertEngine />
       </div>
     </>
-  )
+  );
 }

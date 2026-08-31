@@ -41,7 +41,10 @@ function AlertEditorPage() {
     updateAlert.mutate({ id, data: { name, preset } })
   }
 
-  const handlePlayPreview = () => {
+  const handlePlayPreview = async () => {
+    // Initialize audio context synchronously on click to preserve user gesture permissions in Chrome
+    await audioManager.initialize();
+
     setIsPreviewVisible(false)
     setTimeout(async () => {
       setPreviewKey(prev => prev + 1)

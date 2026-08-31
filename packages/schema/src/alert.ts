@@ -106,10 +106,24 @@ export const AlertPlacementSchema = z.object({
 
 export type AlertPlacement = z.infer<typeof AlertPlacementSchema>;
 
+export const AlertAudioSourceSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("asset"),
+    url: z.string(),
+  }),
+  z.object({
+    type: z.literal("synthetic"),
+    preset: z.string(),
+  })
+]);
+
+export type AlertAudioSource = z.infer<typeof AlertAudioSourceSchema>;
+
 export const AlertInstanceSchema = z.object({
   event: AlertEventSchema,
   definition: AlertDefinitionSchema,
   placement: AlertPlacementSchema,
+  audio: AlertAudioSourceSchema.optional(),
 });
 
 export type AlertInstance = z.infer<typeof AlertInstanceSchema>;

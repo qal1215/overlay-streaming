@@ -17,9 +17,21 @@ export function AlertEngine() {
       setCurrentInstance(instance);
       const alertDef = instance.definition;
 
-      // Preload audio and initialize context
-      await audioManager.initialize();
+      // The context will be lazily initialized or unlocked by AudioSetup.
+      // We no longer call audioManager.initialize() here to prevent blocking.
       const timeline = alertDef.timeline || { duration: 5000, events: [] };
+      
+      console.log("[AlertEngine] Processing alert", instance.event.id);
+      
+      if (instance.audio) {
+        if (instance.audio.type === "asset") {
+          console.log("[AudioManager] Preloading:\n", instance.audio.url);
+        } else if (instance.audio.type === "synthetic") {
+          console.log("[AudioManager] Preloading synthetic:\n", instance.audio.preset);
+        }
+        await audioManager.preload(instance.audio);
+      }
+
       for (const event of timeline.events) {
         if (event.sound) {
           await audioManager.preload(event.sound, event.sound);
@@ -29,11 +41,31 @@ export function AlertEngine() {
       // Process timeline
       return new Promise<void>((resolve) => {
         const timeouts: ReturnType<typeof setTimeout>[] = [];
+        
+        let hasPlayedMainAudio = false;
 
         // Schedule all timeline events
         timeline.events.forEach((event: AlertTimelineEvent) => {
           const timeoutId = setTimeout(() => {
-            handleTimelineEvent(event, alertDef);
+            console.log(`[AlertEngine] Processing event: ${event.type}`);
+
+            // Handle Visuals
+            if (event.type === "enter") {
+              setIsVisible(true);
+              
+              // Play main audio on enter if not played
+              if (!hasPlayedMainAudio && instance.audio) {
+                hasPlayedMainAudio = true;
+                audioManager.play(instance.audio, alertDef.preset.audio?.volume ?? 0.8);
+              }
+            } else if (event.type === "exit") {
+              setIsVisible(false);
+            }
+
+            // Handle Timeline Specific Audio
+            if (event.sound) {
+              audioManager.play(event.sound, alertDef.preset.audio?.volume ?? 0.8);
+            }
           }, event.at);
           timeouts.push(timeoutId);
         });
@@ -56,22 +88,6 @@ export function AlertEngine() {
       });
     });
   }, []);
-
-  const handleTimelineEvent = (event: AlertTimelineEvent, alertDef: any) => {
-    console.log(`[AlertEngine] Processing event: ${event.type}`);
-
-    // Handle Visuals
-    if (event.type === "enter") {
-      setIsVisible(true);
-    } else if (event.type === "exit") {
-      setIsVisible(false);
-    }
-
-    // Handle Audio
-    if (event.sound) {
-      audioManager.play(event.sound, alertDef.preset.audio?.volume ?? 0.8);
-    }
-  };
 
   if (!currentInstance) return null;
 

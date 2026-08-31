@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RotatingPanelRouteImport } from './routes/rotatingPanel'
+import { Route as DebugAudioRouteImport } from './routes/debug/audio'
 import { Route as OverlayIdRouteImport } from './routes/overlay/$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const RotatingPanelRoute = RotatingPanelRouteImport.update({
   path: '/rotatingPanel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DebugAudioRoute = DebugAudioRouteImport.update({
+  id: '/debug/audio',
+  path: '/debug/audio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OverlayIdRoute = OverlayIdRouteImport.update({
   id: '/overlay/$id',
   path: '/overlay/$id',
@@ -32,30 +38,34 @@ const OverlayIdRoute = OverlayIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/rotatingPanel': typeof RotatingPanelRoute
+  '/debug/audio': typeof DebugAudioRoute
   '/overlay/$id': typeof OverlayIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/rotatingPanel': typeof RotatingPanelRoute
+  '/debug/audio': typeof DebugAudioRoute
   '/overlay/$id': typeof OverlayIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/rotatingPanel': typeof RotatingPanelRoute
+  '/debug/audio': typeof DebugAudioRoute
   '/overlay/$id': typeof OverlayIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/rotatingPanel' | '/overlay/$id'
+  fullPaths: '/' | '/rotatingPanel' | '/debug/audio' | '/overlay/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/rotatingPanel' | '/overlay/$id'
-  id: '__root__' | '/' | '/rotatingPanel' | '/overlay/$id'
+  to: '/' | '/rotatingPanel' | '/debug/audio' | '/overlay/$id'
+  id: '__root__' | '/' | '/rotatingPanel' | '/debug/audio' | '/overlay/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RotatingPanelRoute: typeof RotatingPanelRoute
+  DebugAudioRoute: typeof DebugAudioRoute
   OverlayIdRoute: typeof OverlayIdRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RotatingPanelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/debug/audio': {
+      id: '/debug/audio'
+      path: '/debug/audio'
+      fullPath: '/debug/audio'
+      preLoaderRoute: typeof DebugAudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/overlay/$id': {
       id: '/overlay/$id'
       path: '/overlay/$id'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RotatingPanelRoute: RotatingPanelRoute,
+  DebugAudioRoute: DebugAudioRoute,
   OverlayIdRoute: OverlayIdRoute,
 }
 export const routeTree = rootRouteImport

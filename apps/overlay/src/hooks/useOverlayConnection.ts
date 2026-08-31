@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { AlertEvent, OverlayRuntimeState } from '@overlay/schema';
 import { OverlayRuntimeMessageSchema } from '@overlay/schema';
+import { API_URL } from '../lib/config';
 
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'error';
 
@@ -27,8 +28,7 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
       
       setConnectionState(backoffRef.current > 1000 ? 'reconnecting' : 'connecting');
       
-      const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8787';
-      const wsUrl = apiHost.replace(/^http/, 'ws') + `/api/overlay/${overlayId}/ws`;
+      const wsUrl = API_URL.replace(/^http/, 'ws') + `/api/overlay/${overlayId}/ws`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
