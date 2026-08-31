@@ -10,8 +10,13 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
   const [runtimeState, setRuntimeState] = useState<OverlayRuntimeState | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backoffRef = useRef(1000); // Start with 1 second
+
+  const runtimeStateRef = useRef<OverlayRuntimeState | null>(null);
+  useEffect(() => {
+    runtimeStateRef.current = runtimeState;
+  }, [runtimeState]);
   
   const onAlertEventRef = useRef(onAlertEvent);
   useEffect(() => {
@@ -38,36 +43,49 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
         backoffRef.current = 1000; // Reset backoff on success
       };
 
-      ws.onmessage = (event) => {
-        if (!mounted) return;
-        
-        try {
-          const data = JSON.parse(event.data);
-          const parsed = OverlayRuntimeMessageSchema.parse(data);
+      let messageQueue = Promise.resolve();
 
-          if (parsed.type === 'overlay:init' || parsed.type === 'overlay:update') {
-            setRuntimeState(parsed.state);
-          } else if (parsed.type === 'alert:update') {
-            setRuntimeState(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                alerts: {
-                  ...prev.alerts,
-                  [parsed.alert.id]: parsed.alert
-                }
-              };
-            });
-          } else if (parsed.type === 'alert:event') {
-            if (onAlertEventRef.current) {
-              onAlertEventRef.current(parsed.event);
+      ws.onmessage = (event) => {
+        messageQueue = messageQueue.then(async () => {
+          if (!mounted) return;
+          
+          try {
+            const data = JSON.parse(event.data);
+            const parsed = OverlayRuntimeMessageSchema.parse(data);
+
+            if (parsed.type === 'overlay:init' || parsed.type === 'overlay:update') {
+              const { prepareAlertAudio } = await import('../lib/prepareAlertAudio');
+              await prepareAlertAudio(Object.values(parsed.state.alerts), parsed.state.overlay.assets);
+              if (!mounted) return;
+              setRuntimeState(parsed.state);
+            } else if (parsed.type === 'alert:update') {
+              const currentAssets = runtimeStateRef.current?.overlay.assets;
+              const { prepareAlertAudio } = await import('../lib/prepareAlertAudio');
+              await prepareAlertAudio([parsed.alert], currentAssets);
+              if (!mounted) return;
+              setRuntimeState(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  alerts: {
+                    ...prev.alerts,
+                    [parsed.alert.id]: parsed.alert
+                  }
+                };
+              });
+            } else if (parsed.type === 'alert:event') {
+              if (onAlertEventRef.current) {
+                onAlertEventRef.current(parsed.event);
+              }
+            } else if (parsed.type === 'error') {
+              console.error('Overlay error:', parsed.message);
             }
-          } else if (parsed.type === 'error') {
-            console.error('Overlay error:', parsed.message);
+          } catch (err) {
+            console.error('Failed to parse WebSocket message', err);
           }
-        } catch (err) {
-          console.error('Failed to parse WebSocket message', err);
-        }
+        }).catch(err => {
+          console.error('WebSocket message queue error:', err);
+        });
       };
 
       ws.onclose = () => {

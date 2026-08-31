@@ -10,57 +10,65 @@ export function AlertEngine() {
   );
   const [isVisible, setIsVisible] = useState(false);
 
+  const isMounted = React.useRef(true);
+  const activeTimeouts = React.useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
   useEffect(() => {
+    isMounted.current = true;
+
     // We register the AlertEngine as the processor for the AlertQueue.
     // The queue guarantees this callback is only run for one alert at a time.
-    alertQueue.setProcessor(async (instance: AlertInstance) => {
+    const unregister = alertQueue.setProcessor(async (instance: AlertInstance) => {
+      if (!isMounted.current) return;
       setCurrentInstance(instance);
-      const alertDef = instance.definition;
 
-      // The context will be lazily initialized or unlocked by AudioSetup.
-      // We no longer call audioManager.initialize() here to prevent blocking.
+      const alertDef = instance.definition;
       const timeline = alertDef.timeline || { duration: 5000, events: [] };
       
-      console.log("[AlertEngine] Processing alert", instance.event.id);
-      
-      try {
-        if (instance.audio) {
-          if (instance.audio.type === "asset") {
-            console.log("[AudioManager] Preloading:\n", instance.audio.url);
-          } else if (instance.audio.type === "synthetic") {
-            console.log("[AudioManager] Preloading synthetic:\n", instance.audio.preset);
-          }
-          await audioManager.preload(instance.audio);
-        }
-
-        for (const event of timeline.events) {
-          if (event.sound) {
-            await audioManager.preload(event.sound, event.sound);
-          }
-        }
-      } catch (err) {
-        console.warn("[AlertEngine] Audio preload failed, continuing visually", err);
-      }
+      console.log("[AlertEngine] Processing alert", instance.event.eventId);
 
       // Process timeline
       return new Promise<void>((resolve) => {
-        const timeouts: ReturnType<typeof setTimeout>[] = [];
         let hasPlayedMainAudio = false;
 
         const cleanupAndResolve = () => {
-          timeouts.forEach(clearTimeout);
-          setIsVisible(false);
-          // Wait a tiny bit for exit animations to finish before resolving the queue item
-          setTimeout(() => {
-            setCurrentInstance(null);
+          // Clear all scheduled timeline events
+          activeTimeouts.current.forEach(clearTimeout);
+          activeTimeouts.current.clear();
+          
+          if (isMounted.current) {
+            setIsVisible(false);
+            
+            // Wait a tiny bit for exit animations to finish before resolving the queue item
+            const exitId = setTimeout(() => {
+              activeTimeouts.current.delete(exitId);
+              if (isMounted.current) {
+                setCurrentInstance(null);
+                resolve();
+              } else {
+                resolve();
+              }
+            }, 1000);
+            activeTimeouts.current.add(exitId);
+          } else {
             resolve();
-          }, 1000);
+          }
         };
+
+        // If the component unmounts while this Promise is active, we must resolve it.
+        // We'll attach a one-off cleanup function to the unmount lifecycle specifically for this instance.
+        // However, a simpler way is that the main useEffect cleanup will clear timeouts,
+        // but it doesn't have access to `resolve`.
+        // To fix this, we can store the current resolve function in a ref.
+        currentResolveRef.current = cleanupAndResolve;
 
         try {
           // Schedule all timeline events
           timeline.events.forEach((event: AlertTimelineEvent) => {
             const timeoutId = setTimeout(() => {
+              activeTimeouts.current.delete(timeoutId);
+              if (!isMounted.current) return;
+
               try {
                 console.log(`[AlertEngine] Processing event: ${event.type}`);
 
@@ -85,24 +93,39 @@ export function AlertEngine() {
                 console.error("[AlertEngine] Timeline event execution error", err);
               }
             }, event.at);
-            timeouts.push(timeoutId);
+            activeTimeouts.current.add(timeoutId);
           });
 
           // Setup completion timeout based on duration
           const completeId = setTimeout(() => {
-            cleanupAndResolve();
+            activeTimeouts.current.delete(completeId);
+            if (isMounted.current) {
+              cleanupAndResolve();
+            }
           }, timeline.duration);
-          timeouts.push(completeId);
+          activeTimeouts.current.add(completeId);
         } catch (err) {
           console.error("[AlertEngine] Critical timeline setup error", err);
           cleanupAndResolve();
         }
-
-        // We don't return the cleanup function to React anymore because 
-        // the queue lifecycle owns it. If the component unmounts, the queue will just discard.
       });
     });
+
+    return () => {
+      isMounted.current = false;
+      unregister();
+      activeTimeouts.current.forEach(clearTimeout);
+      activeTimeouts.current.clear();
+      
+      // If there's an active alert processing, resolve its promise to free the queue
+      if (currentResolveRef.current) {
+        currentResolveRef.current();
+        currentResolveRef.current = null;
+      }
+    };
   }, []);
+
+  const currentResolveRef = React.useRef<(() => void) | null>(null);
 
   if (!currentInstance) return null;
 

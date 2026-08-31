@@ -27,6 +27,11 @@ export class AlertQueue {
    */
   public setProcessor(callback: (event: AlertInstance) => Promise<void>) {
     this.processCallback = callback;
+    return () => {
+      if (this.processCallback === callback) {
+        this.processCallback = undefined;
+      }
+    };
   }
 
   public async push(event: AlertInstance) {
