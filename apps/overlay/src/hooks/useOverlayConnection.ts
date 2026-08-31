@@ -47,6 +47,17 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
 
           if (parsed.type === 'overlay:init' || parsed.type === 'overlay:update') {
             setRuntimeState(parsed.state);
+          } else if (parsed.type === 'alert:update') {
+            setRuntimeState(prev => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                alerts: {
+                  ...prev.alerts,
+                  [parsed.alert.id]: parsed.alert
+                }
+              };
+            });
           } else if (parsed.type === 'alert:event') {
             if (onAlertEventRef.current) {
               onAlertEventRef.current(parsed.event);

@@ -76,7 +76,16 @@ export class OverlayService {
       const alertResults = await alertQueries.getAlertsByIds(this.db, Array.from(alertIds));
       alertResults.forEach((a: any) => {
         const preset = JSON.parse(a.preset as string);
-        alertsMap[a.id] = { ...a, preset };
+        const duration = preset.animation?.duration || 5000;
+        const timeline = {
+          duration,
+          events: [
+            { at: 0, type: "enter" },
+            { at: 300, type: "impact" },
+            { at: duration - 500, type: "exit" },
+          ]
+        };
+        alertsMap[a.id] = { ...a, preset, timeline };
         // Extract assets from alert preset
         if (preset.audio?.soundId) assetIds.add(preset.audio.soundId);
         // If there are image URLs in the preset we would add them here too
@@ -118,7 +127,16 @@ export class OverlayService {
       const alertResults = await alertQueries.getAlertsByIds(this.db, Array.from(alertIds));
       alertResults.forEach((a: any) => {
         const preset = JSON.parse(a.preset as string);
-        alertsMap[a.id] = { ...a, preset };
+        const duration = preset.animation?.duration || 5000;
+        const timeline = {
+          duration,
+          events: [
+            { at: 0, type: "enter" },
+            { at: 300, type: "impact" },
+            { at: duration - 500, type: "exit" },
+          ]
+        };
+        alertsMap[a.id] = { ...a, preset, timeline };
         if (preset.audio?.soundId) assetIds.add(preset.audio.soundId);
       });
     }

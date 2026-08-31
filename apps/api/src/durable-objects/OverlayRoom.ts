@@ -33,6 +33,21 @@ export class OverlayRoom extends DurableObject {
       return this.broadcast(message);
     }
 
+    if (request.method === "POST" && url.pathname === "/alert/update") {
+      const alertDef = (await request.json()) as any;
+      if (this.currentState) {
+        this.currentState.alerts[alertDef.id] = alertDef;
+        await this.ctx.storage.put("overlay_state", this.currentState);
+      }
+      
+      const message: OverlayRuntimeMessage = {
+        type: "alert:update",
+        alert: alertDef,
+      };
+      
+      return this.broadcast(message);
+    }
+
     // Endpoint for the API to initialize the DO state without broadcasting
     if (request.method === "POST" && url.pathname === "/init") {
       if (!this.currentState) {

@@ -43,13 +43,13 @@ alertsRouter.patch("/:alertId", async (c) => {
     for (const overlay of overlays) {
       const hasAlert = overlay.components.some((comp: any) => comp.type === "alert" && comp.alertId === alertId);
       if (hasAlert) {
-        const updatedOverlay = await overlayService.getOverlay(creatorId, overlay.id);
-        if (updatedOverlay) {
+        const updatedAlert = await service.getAlert(creatorId, alertId);
+        if (updatedAlert) {
           const doId = c.env.OVERLAY_ROOM.idFromName(overlay.id);
           const room = c.env.OVERLAY_ROOM.get(doId);
-          const req = new Request(`http://do/update`, {
+          const req = new Request(`http://do/alert/update`, {
             method: "POST",
-            body: JSON.stringify(updatedOverlay),
+            body: JSON.stringify(updatedAlert),
             headers: { "Content-Type": "application/json" }
           });
           c.executionCtx.waitUntil(room.fetch(req));

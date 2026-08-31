@@ -26,9 +26,20 @@ export class AlertService {
   async getAlert(creatorId: string, alertId: string) {
     const alert = await alertQueries.getAlert(this.db, alertId, creatorId);
     if (!alert) return null;
+    const preset = JSON.parse(alert.preset as string);
+    const duration = preset.animation?.duration || 5000;
+    
     return {
       ...alert,
-      preset: JSON.parse(alert.preset as string),
+      preset,
+      timeline: {
+        duration,
+        events: [
+          { at: 0, type: "enter" },
+          { at: 300, type: "impact" },
+          { at: duration - 500, type: "exit" },
+        ]
+      }
     };
   }
 

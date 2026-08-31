@@ -81,9 +81,25 @@ function OverlayRuntimeRoute() {
       message: event.message,
     };
 
-    // Use event duration if provided, else fallback to timeline duration or default
-    const duration =
-      event.alert?.duration || alertDef.timeline?.duration || 6000;
+    // Use event duration if provided to override the timeline duration
+    if (event.alert?.duration && alertDef.timeline) {
+      const duration = event.alert.duration;
+      alertDef.timeline.duration = duration;
+      const exitEvent = alertDef.timeline.events.find(
+        (e: any) => e.type === "exit",
+      );
+      if (exitEvent) {
+        exitEvent.at = duration - 500;
+      }
+    }
+
+    const placement: AlertPlacement = {
+      x: targetComponent.position.x,
+      y: targetComponent.position.y,
+      width: targetComponent.size.width,
+      height: targetComponent.size.height,
+      zIndex: targetComponent.zIndex,
+    };
 
     const resolveAssetUrl = (assetId?: string) => {
       if (!assetId) return "";
@@ -99,40 +115,6 @@ function OverlayRuntimeRoute() {
       : { type: "synthetic" as const, preset: "beep" };
 
     console.log("[AlertRuntime] Resolved audio", audioSource);
-
-    if (
-      !alertDef.timeline ||
-      !alertDef.timeline.events ||
-      alertDef.timeline.events.length === 0
-    ) {
-      alertDef.timeline = {
-        duration,
-        events: [
-          { at: 0, type: "enter" },
-          { at: 300, type: "impact" },
-          { at: duration - 500, type: "exit" },
-        ],
-      };
-    } else {
-      if (event.alert?.duration) {
-        // If duration was overridden, adjust the exit event if it exists
-        alertDef.timeline.duration = duration;
-        const exitEvent = alertDef.timeline.events.find(
-          (e: any) => e.type === "exit",
-        );
-        if (exitEvent) {
-          exitEvent.at = duration - 500;
-        }
-      }
-    }
-
-    const placement: AlertPlacement = {
-      x: targetComponent.position.x,
-      y: targetComponent.position.y,
-      width: targetComponent.size.width,
-      height: targetComponent.size.height,
-      zIndex: targetComponent.zIndex,
-    };
 
     const instance: AlertInstance = {
       event,

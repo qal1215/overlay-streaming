@@ -48,6 +48,10 @@ export const OverlayRuntimeMessageSchema = z.discriminatedUnion("type", [
     event: AlertEventSchema,
   }),
   z.object({
+    type: z.literal("alert:update"),
+    alert: AlertDefinitionSchema,
+  }),
+  z.object({
     type: z.literal("error"),
     message: z.string(),
   }),

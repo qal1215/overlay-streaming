@@ -46,7 +46,8 @@ export const AlertPresetSchema = z.object({
   animation: z.object({
     enterStyle: z.enum(["fade", "slide", "bounce", "zoom", "glitch"]).default("fade"),
     exitStyle: z.enum(["fade", "slide", "bounce", "zoom", "glitch"]).default("fade"),
-  }).default({ enterStyle: "fade", exitStyle: "fade" }),
+    duration: z.number().min(1000).max(60000).default(5000),
+  }).default({ enterStyle: "fade", exitStyle: "fade", duration: 5000 }),
   audio: z.object({
     volume: z.number().min(0).max(1).default(0.8),
     soundId: z.string().optional(),

@@ -186,6 +186,21 @@ function AlertEditorPage() {
 
             {activeTab === 'animation' && (
               <div className="space-y-6">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-text-muted flex justify-between">
+                    <span>Alert Duration</span>
+                    <span>{(preset.animation?.duration ?? 5000) / 1000}s</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="2000"
+                    max="15000"
+                    step="500"
+                    value={preset.animation?.duration ?? 5000}
+                    onChange={(e) => updatePreset('animation', 'duration', parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                </div>
                  <div className="space-y-3">
                   <label className="text-sm font-medium text-text-muted">Enter Animation</label>
                   <select 
