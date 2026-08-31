@@ -8,6 +8,16 @@ export async function getOverlays(db: D1Database, creatorId: string) {
   return results;
 }
 
+export async function getOverlaysByAlertId(db: D1Database, creatorId: string, alertId: string) {
+  // A simple LIKE query on the JSON string. Since alertId is unique (uuid), this is safe.
+  // In a robust scenario, could use SQLite json_extract or virtual tables.
+  const { results } = await db
+    .prepare("SELECT id FROM overlays WHERE creator_id = ? AND definition_json LIKE ?")
+    .bind(creatorId, `%${alertId}%`)
+    .all();
+  return results.map((r: any) => r.id as string);
+}
+
 export async function insertOverlay(
   db: D1Database,
   id: string,

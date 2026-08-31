@@ -51,6 +51,38 @@ export class AlertService {
 
     const result = await alertQueries.updateAlert(this.db, alertId, creatorId, name, presetStr);
     if (!result.success) throw new Error("Failed to update alert");
+
+    // Re-hydrate overlays that use this alert
+    if (this.overlayRoom) {
+      const { getOverlaysByAlertId } = await import("../db/queries/overlays");
+      const affectedOverlayIds = await getOverlaysByAlertId(this.db, creatorId, alertId);
+      
+      if (affectedOverlayIds.length > 0) {
+        const { OverlayService } = await import("./overlay-service");
+        const overlayService = new OverlayService(this.db);
+        
+        // Ensure DO routes correctly if the DO ID is per creator or per overlay
+        // Note: Currently, index.ts routes `/api/overlay/:overlayId/ws` -> DO idFromName(overlayId).
+        // It routes `/api/overlay/:id/broadcast` -> DO idFromName(creatorId). Wait.
+        // Wait, in index.ts:
+        // `app.get("/api/overlay/:overlayId/ws", ... id = c.env.OVERLAY_ROOM.idFromName(overlayId);`
+        // So the DO is per-overlay.
+        for (const affectedId of affectedOverlayIds) {
+          const doId = this.overlayRoom.idFromName(affectedId);
+          const room = this.overlayRoom.get(doId);
+          
+          const state = await overlayService.getOverlayById(affectedId);
+          if (state) {
+            await room.fetch(new Request("http://do/update", {
+              method: "POST",
+              body: JSON.stringify(state),
+              headers: { "Content-Type": "application/json" }
+            }));
+          }
+        }
+      }
+    }
+
     return { success: true };
   }
 

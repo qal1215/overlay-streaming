@@ -6,6 +6,16 @@ export async function getAlerts(db: D1Database, creatorId: string) {
   return results;
 }
 
+export async function getAlertsByIds(db: D1Database, ids: string[]) {
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => "?").join(",");
+  const { results } = await db
+    .prepare(`SELECT * FROM alerts WHERE id IN (${placeholders})`)
+    .bind(...ids)
+    .all();
+  return results;
+}
+
 export async function insertAlert(
   db: D1Database,
   id: string,

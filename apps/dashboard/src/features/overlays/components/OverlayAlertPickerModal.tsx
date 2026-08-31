@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { AlertDefinition } from "@overlay/schema";
 
+import { API_URL } from "../../../api/client";
+
 interface OverlayAlertPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,7 +23,7 @@ export function OverlayAlertPickerModal({
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      fetch(`http://localhost:8787/api/admin/creator/${creatorId}/alerts`)
+      fetch(`${API_URL}/api/admin/creator/${creatorId}/alerts`)
         .then((res) => res.json())
         .then((data) => {
           setAlerts(data);

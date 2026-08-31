@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { API_URL } from "../../../api/client";
 
 interface AssetPickerModalProps {
   isOpen: boolean;
@@ -53,12 +54,12 @@ export function AssetPickerModal({
                 <div className="aspect-video bg-black/50 flex items-center justify-center relative overflow-hidden">
                   {asset.type === "image" || asset.type === "gif" ? (
                     <img
-                      src={`http://localhost:8787${asset.url}`}
+                      src={`${API_URL}${asset.url}`}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <video
-                      src={`http://localhost:8787${asset.url}`}
+                      src={`${API_URL}${asset.url}`}
                       className="w-full h-full object-cover"
                     />
                   )}

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "../../../api/client";
+import { apiClient, API_URL } from "../../../api/client";
 import type { AssetDefinition } from "@overlay/schema";
 
 const CREATOR_ID = "default_creator";
@@ -43,7 +43,7 @@ export function useUploadAsset() {
         const xhr = new XMLHttpRequest();
         xhr.open(
           "POST",
-          `http://localhost:8787/api/admin/creator/${CREATOR_ID}/assets`,
+          `${API_URL}/api/admin/creator/${CREATOR_ID}/assets`,
         );
 
         if (onProgress) {

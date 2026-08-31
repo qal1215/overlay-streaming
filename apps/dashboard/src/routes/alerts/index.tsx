@@ -68,6 +68,7 @@ function AlertsListPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-4 border-t border-white/10 mt-auto">
+                {/* @ts-expect-error tanstack-router dynamic paths are sometimes overly strict */}
                 <Link
                   to={`/alerts/${alert.id}`}
                   className="flex flex-col items-center justify-center gap-1 py-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"

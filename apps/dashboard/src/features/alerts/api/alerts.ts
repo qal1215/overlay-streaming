@@ -1,6 +1,7 @@
 import type { AlertDefinition } from "@overlay/schema";
 
-const API_BASE = "http://localhost:8787/api/admin/creator/default_creator/alerts";
+import { API_URL } from "../../../api/client";
+const API_BASE = `${API_URL}/api/admin/creator/default_creator/alerts`;
 
 export async function fetchAlerts(): Promise<AlertDefinition[]> {
   const res = await fetch(API_BASE);

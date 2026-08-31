@@ -4,6 +4,7 @@ import { Music, Upload, Trash2, Play, Pause, Volume2, Cloud } from 'lucide-react
 import { useState, useRef } from 'react'
 
 import { audioManager } from '@overlay/audio-engine'
+import { API_URL } from '../../api/client'
 
 export const Route = createFileRoute('/audio/')({
   component: AudioLibraryPage,
@@ -31,7 +32,7 @@ function AudioLibraryPage() {
         setPlayingId(id);
         setTimeout(() => setPlayingId(null), 600);
       } else if (audioRef.current) {
-        audioRef.current.src = url.startsWith('http') ? url : `http://localhost:8787${url}`
+        audioRef.current.src = url.startsWith('http') ? url : `${API_URL}${url}`
         audioRef.current.play()
         setPlayingId(id)
       }

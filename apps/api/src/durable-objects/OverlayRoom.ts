@@ -1,17 +1,17 @@
 import { DurableObject } from "cloudflare:workers";
-import type { OverlayDefinition, OverlayRuntimeMessage } from "@overlay/schema";
+import type { OverlayRuntimeState, OverlayRuntimeMessage } from "@overlay/schema";
 
 export class OverlayRoom extends DurableObject {
-  private currentOverlay: OverlayDefinition | null = null;
+  private currentState: OverlayRuntimeState | null = null;
 
   constructor(ctx: DurableObjectState, env: any) {
     super(ctx, env);
     // Ideally we'd load the initial state from D1 here if we don't have it,
     // but the API route can also just push the state to us.
     this.ctx.blockConcurrencyWhile(async () => {
-      const stored = await this.ctx.storage.get<OverlayDefinition>("overlay");
+      const stored = await this.ctx.storage.get<OverlayRuntimeState>("overlay_state");
       if (stored) {
-        this.currentOverlay = stored;
+        this.currentState = stored;
       }
     });
   }
@@ -21,13 +21,13 @@ export class OverlayRoom extends DurableObject {
 
     // Endpoint for the API to push overlay updates
     if (request.method === "POST" && url.pathname === "/update") {
-      const overlay = (await request.json()) as OverlayDefinition;
-      this.currentOverlay = overlay;
-      await this.ctx.storage.put("overlay", overlay);
+      const state = (await request.json()) as OverlayRuntimeState;
+      this.currentState = state;
+      await this.ctx.storage.put("overlay_state", state);
       
       const message: OverlayRuntimeMessage = {
         type: "overlay:update",
-        overlay,
+        state,
       };
       
       return this.broadcast(message);
@@ -35,10 +35,10 @@ export class OverlayRoom extends DurableObject {
 
     // Endpoint for the API to initialize the DO state without broadcasting
     if (request.method === "POST" && url.pathname === "/init") {
-      if (!this.currentOverlay) {
-        const overlay = (await request.json()) as OverlayDefinition;
-        this.currentOverlay = overlay;
-        await this.ctx.storage.put("overlay", overlay);
+      if (!this.currentState) {
+        const state = (await request.json()) as OverlayRuntimeState;
+        this.currentState = state;
+        await this.ctx.storage.put("overlay_state", state);
       }
       return new Response("ok");
     }
@@ -60,10 +60,10 @@ export class OverlayRoom extends DurableObject {
     this.ctx.acceptWebSocket(server);
     
     // Send initial state upon connection
-    if (this.currentOverlay) {
+    if (this.currentState) {
       const initMessage: OverlayRuntimeMessage = {
         type: "overlay:init",
-        overlay: this.currentOverlay,
+        state: this.currentState,
       };
       server.send(JSON.stringify(initMessage));
     }

@@ -69,9 +69,10 @@ export const AlertDataSchema = z.object({
 
 export const AlertDefinitionSchema = z.object({
   id: z.string(),
+  name: z.string().optional(),
   preset: AlertPresetSchema,
-  data: AlertDataSchema,
-  timeline: AlertTimelineSchema,
+  data: AlertDataSchema.optional(),
+  timeline: AlertTimelineSchema.optional(),
 });
 
 export type AlertDefinition = z.infer<typeof AlertDefinitionSchema>;

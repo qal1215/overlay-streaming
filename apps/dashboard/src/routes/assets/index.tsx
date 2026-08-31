@@ -7,6 +7,7 @@ import {
   useDeleteAsset,
   useUploadAsset,
 } from "../../features/assets/hooks/useAssets";
+import { API_URL } from "../../api/client";
 
 export const Route = createFileRoute("/assets/")({
   component: AssetsLibraryPage,
@@ -240,13 +241,13 @@ function AssetsLibraryPage() {
               <div className="aspect-square bg-background flex items-center justify-center p-4 relative overflow-hidden">
                 {asset.type === "image" || asset.type === "gif" ? (
                   <img
-                    src={`http://localhost:8787${asset.url}`}
+                    src={`${API_URL}${asset.url}`}
                     alt={asset.name}
                     className="w-full h-full object-contain"
                   />
                 ) : asset.type === "video" ? (
                   <video
-                    src={`http://localhost:8787${asset.url}`}
+                    src={`${API_URL}${asset.url}`}
                     className="w-full h-full object-cover"
                     muted
                   />
@@ -325,13 +326,13 @@ function AssetsLibraryPage() {
             <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-black/40 bg-[radial-gradient(#ffffff11_1px,transparent_1px)] [background-size:16px_16px]">
               {previewAsset.type === "image" || previewAsset.type === "gif" ? (
                 <img
-                  src={`http://localhost:8787${previewAsset.url}`}
+                  src={`${API_URL}${previewAsset.url}`}
                   alt={previewAsset.name}
                   className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
                 />
               ) : previewAsset.type === "video" ? (
                 <video
-                  src={`http://localhost:8787${previewAsset.url}`}
+                  src={`${API_URL}${previewAsset.url}`}
                   controls
                   autoPlay
                   loop
@@ -354,7 +355,7 @@ function AssetsLibraryPage() {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(
-                    `http://localhost:8787${previewAsset.url}`,
+                    `${API_URL}${previewAsset.url}`,
                   );
                   alert("URL copied to clipboard!");
                 }}

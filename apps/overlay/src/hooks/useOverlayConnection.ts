@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import type { AlertEvent, OverlayDefinition } from '@overlay/schema';
+import type { AlertEvent, OverlayRuntimeState } from '@overlay/schema';
 import { OverlayRuntimeMessageSchema } from '@overlay/schema';
 
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'error';
 
 export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: AlertEvent) => void) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
-  const [overlay, setOverlay] = useState<OverlayDefinition | null>(null);
+  const [runtimeState, setRuntimeState] = useState<OverlayRuntimeState | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -27,7 +27,8 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
       
       setConnectionState(backoffRef.current > 1000 ? 'reconnecting' : 'connecting');
       
-      const wsUrl = `ws://localhost:8787/api/overlay/${overlayId}/ws`;
+      const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+      const wsUrl = apiHost.replace(/^http/, 'ws') + `/api/overlay/${overlayId}/ws`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -45,7 +46,7 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
           const parsed = OverlayRuntimeMessageSchema.parse(data);
 
           if (parsed.type === 'overlay:init' || parsed.type === 'overlay:update') {
-            setOverlay(parsed.overlay);
+            setRuntimeState(parsed.state);
           } else if (parsed.type === 'alert:event') {
             if (onAlertEventRef.current) {
               onAlertEventRef.current(parsed.event);
@@ -98,5 +99,5 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
     };
   }, [overlayId]);
 
-  return { connectionState, overlay };
+  return { connectionState, runtimeState };
 }

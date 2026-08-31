@@ -11,6 +11,7 @@ import { AssetPickerModal } from "../../features/overlays/components/AssetPicker
 import { OverlayAlertPickerModal } from "../../features/overlays/components/OverlayAlertPickerModal";
 import { alertQueue } from "@overlay/alert-engine";
 import type { AlertEvent, AlertInstance, AlertPlacement } from "@overlay/schema";
+import { API_URL } from "../../api/client";
 
 export const Route = createFileRoute("/overlays/$id")({
   component: OverlayEditorPage,
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/overlays/$id")({
 
 function OverlayEditorPage() {
   const { id } = Route.useParams();
-  const { data: overlay, isLoading } = useOverlay(id);
+  const { data: runtimeState, isLoading } = useOverlay(id);
+  const overlay = runtimeState?.overlay;
   const { data: assets } = useAssets("all");
   const updateOverlay = useUpdateOverlay();
 
@@ -34,7 +36,7 @@ function OverlayEditorPage() {
   const getAssetUrl = (assetId?: string) => {
     if (!assetId) return "https://placehold.co/600x400";
     const asset = assets?.find((a) => a.id === assetId);
-    return asset ? `http://localhost:8787${asset.url}` : "https://placehold.co/600x400";
+    return asset ? `${API_URL}${asset.url}` : "https://placehold.co/600x400";
   };
 
   const handleTestAlertLocally = async () => {
@@ -46,7 +48,8 @@ function OverlayEditorPage() {
 
     let alertDef;
     try {
-      const res = await fetch(`http://localhost:8787/api/admin/creator/default_creator/alerts/${targetComponent.alertId}`);
+      const alertId = (targetComponent as any).alertId;
+      const res = await fetch(`${API_URL}/api/admin/creator/default_creator/alerts/${alertId}`);
       if (!res.ok) throw new Error("Failed to fetch alert definition");
       alertDef = await res.json();
       
@@ -57,14 +60,16 @@ function OverlayEditorPage() {
         message: "This is a local canvas test!",
       };
       
-      alertDef.timeline = {
-        duration: 5000,
-        events: [
-          { at: 0, type: "enter" },
-          { at: 300, type: "impact" },
-          { at: 4500, type: "exit" },
-        ]
-      };
+      if (!alertDef.timeline || !alertDef.timeline.events || alertDef.timeline.events.length === 0) {
+        alertDef.timeline = {
+          duration: 5000,
+          events: [
+            { at: 0, type: "enter" },
+            { at: 300, type: "impact" },
+            { at: 4500, type: "exit" },
+          ]
+        };
+      }
     } catch (err) {
       console.error("Failed to load alert definition for local test", err);
       return;

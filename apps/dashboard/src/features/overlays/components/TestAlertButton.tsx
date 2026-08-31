@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Bell, Loader2 } from "lucide-react";
+import { API_URL } from "../../../api/client";
 
 interface TestAlertButtonProps {
   creatorId?: string;
@@ -14,7 +15,7 @@ export function TestAlertButton({ creatorId = "default_creator", overlayId, onTe
     setIsSending(true);
     if (onTestLocally) onTestLocally();
     try {
-      await fetch(`http://localhost:8787/api/admin/creator/${creatorId}/test-alert`, {
+      await fetch(`${API_URL}/api/admin/creator/${creatorId}/test-alert`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

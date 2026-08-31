@@ -13,12 +13,13 @@ export const Route = createFileRoute('/overlay/$id')({
 function OverlayRuntimeRoute() {
   const { id } = Route.useParams()
   const [scale, setScale] = useState(1);
-  const overlayRef = useRef<any>(null); // To always access latest overlay in handleAlertEvent
+  const runtimeStateRef = useRef<any>(null); // To always access latest runtime state in handleAlertEvent
 
   const handleAlertEvent = async (event: AlertEvent) => {
     console.log("Received alert:event", event);
-    const overlay = overlayRef.current;
-    if (!overlay) return;
+    const runtimeState = runtimeStateRef.current;
+    if (!runtimeState || !runtimeState.overlay) return;
+    const overlay = runtimeState.overlay;
 
     // Find the alert component that matches this event.
     // For Phase 10: One active AlertComponent per event type per overlay.
@@ -32,33 +33,46 @@ function OverlayRuntimeRoute() {
       return;
     }
 
-    let alertDef;
-    try {
-      // Fetch the actual alert definition from the backend
-      const res = await fetch(`http://localhost:8787/api/admin/creator/default_creator/alerts/${targetComponent.alertId}`);
-      if (!res.ok) throw new Error("Failed to fetch alert definition");
-      alertDef = await res.json();
-      
-      // Merge event data into the definition data so the donor name/amount shows up
-      alertDef.data = {
-        ...alertDef.data,
-        donorName: event.actor?.name || "Anonymous",
-        amount: event.actor?.amount || "",
-        message: event.message,
-      };
+    // Zero-HTTP local lookup of the alert definition
+    const alertId = (targetComponent as any).alertId;
+    let alertDef = runtimeState.alerts[alertId];
+    
+    if (!alertDef) {
+      console.warn("AlertDefinition not found in preloaded runtime state for alertId:", alertId);
+      return;
+    }
 
-      // Ensure timeline exists (since DB only stores preset config)
+    // Clone it so we don't mutate the cached version
+    alertDef = JSON.parse(JSON.stringify(alertDef));
+
+    // Merge event data into the definition data so the donor name/amount shows up
+    alertDef.data = {
+      ...alertDef.data,
+      donorName: event.actor?.name || "Anonymous",
+      amount: event.actor?.amount || "",
+      message: event.message,
+    };
+
+    // Use event duration if provided, else fallback to timeline duration or default
+    const duration = event.alert?.duration || alertDef.timeline?.duration || 6000;
+    
+    // Ensure timeline exists
+    if (!alertDef.timeline || !alertDef.timeline.events || alertDef.timeline.events.length === 0) {
       alertDef.timeline = {
-        duration: event.alert?.duration || 6000,
+        duration,
         events: [
           { at: 0, type: "enter" },
           { at: 300, type: "impact" },
-          { at: (event.alert?.duration || 6000) - 500, type: "exit" },
+          { at: duration - 500, type: "exit" },
         ]
       };
-    } catch (err) {
-      console.error("Failed to load alert definition", err);
-      return;
+    } else if (event.alert?.duration) {
+      // If duration was overridden, adjust the exit event if it exists
+      alertDef.timeline.duration = duration;
+      const exitEvent = alertDef.timeline.events.find((e: any) => e.type === "exit");
+      if (exitEvent) {
+        exitEvent.at = duration - 500;
+      }
     }
     
     const placement: AlertPlacement = {
@@ -78,12 +92,14 @@ function OverlayRuntimeRoute() {
     alertQueue.push(instance);
   };
 
-  const { connectionState, overlay } = useOverlayConnection(id, handleAlertEvent)
+  const { connectionState, runtimeState } = useOverlayConnection(id, handleAlertEvent)
   
-  // Keep overlayRef updated
+  // Keep runtimeStateRef updated
   useLayoutEffect(() => {
-    overlayRef.current = overlay;
-  }, [overlay]);
+    runtimeStateRef.current = runtimeState;
+  }, [runtimeState]);
+
+  const overlay = runtimeState?.overlay;
 
   useLayoutEffect(() => {
     if (!overlay) return;
@@ -112,8 +128,9 @@ function OverlayRuntimeRoute() {
   const resolveAssetUrl = (assetId?: string) => {
     if (!assetId) return "";
     const asset = overlay.assets?.[assetId];
-    // In production, we'd use an env var or a relative path, but localhost:8787 is used here for dev
-    return asset ? `http://localhost:8787${asset.url}` : "";
+    // Use api host from env or fallback
+    const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+    return asset ? `${apiHost}${asset.url}` : "";
   };
 
   return (

@@ -1,7 +1,8 @@
 import { D1Database } from "@cloudflare/workers-types";
 import * as overlayQueries from "../db/queries/overlays";
 import * as assetQueries from "../db/queries/assets";
-import type { OverlayDefinition } from "@overlay/schema";
+import * as alertQueries from "../db/queries/alerts";
+import type { OverlayDefinition, OverlayRuntimeState } from "@overlay/schema";
 
 export class OverlayService {
   constructor(private db: D1Database) {}
@@ -73,7 +74,23 @@ export class OverlayService {
       });
     }
 
-    return { ...overlay, assets: assetsMap };
+    const alertsMap: Record<string, any> = {};
+    const alertIds = new Set<string>();
+    overlay.components.forEach((c: any) => {
+      if (c.type === "alert" && c.alertId) alertIds.add(c.alertId);
+    });
+
+    if (alertIds.size > 0) {
+      const alertResults = await alertQueries.getAlertsByIds(this.db, Array.from(alertIds));
+      alertResults.forEach((a: any) => {
+        alertsMap[a.id] = { ...a, preset: JSON.parse(a.preset as string) };
+      });
+    }
+
+    return { 
+      overlay: { ...overlay, assets: assetsMap },
+      alerts: alertsMap
+    } as OverlayRuntimeState;
   }
 
   async getOverlayById(overlayId: string) {
@@ -95,7 +112,23 @@ export class OverlayService {
       });
     }
 
-    return { ...overlay, assets: assetsMap };
+    const alertsMap: Record<string, any> = {};
+    const alertIds = new Set<string>();
+    overlay.components.forEach((c: any) => {
+      if (c.type === "alert" && c.alertId) alertIds.add(c.alertId);
+    });
+
+    if (alertIds.size > 0) {
+      const alertResults = await alertQueries.getAlertsByIds(this.db, Array.from(alertIds));
+      alertResults.forEach((a: any) => {
+        alertsMap[a.id] = { ...a, preset: JSON.parse(a.preset as string) };
+      });
+    }
+
+    return { 
+      overlay: { ...overlay, assets: assetsMap },
+      alerts: alertsMap
+    } as OverlayRuntimeState;
   }
 
   async updateOverlay(creatorId: string, overlayId: string, body: any) {

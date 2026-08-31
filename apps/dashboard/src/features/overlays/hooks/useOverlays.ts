@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { OverlayDefinition } from "@overlay/schema";
+import type { OverlayDefinition, OverlayRuntimeState } from "@overlay/schema";
 import { apiClient } from "../../../api/client";
 
 const CREATOR_ID = "default_creator";
@@ -14,7 +14,7 @@ export function useOverlays() {
 export function useOverlay(overlayId: string) {
   return useQuery({
     queryKey: ["creator", CREATOR_ID, "overlays", overlayId],
-    queryFn: () => apiClient.get<OverlayDefinition>(`/api/admin/creator/${CREATOR_ID}/overlays/${overlayId}`),
+    queryFn: () => apiClient.get<OverlayRuntimeState>(`/api/admin/creator/${CREATOR_ID}/overlays/${overlayId}`),
     enabled: !!overlayId,
   });
 }

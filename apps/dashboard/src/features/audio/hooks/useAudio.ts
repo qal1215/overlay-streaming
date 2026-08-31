@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "../../../api/client";
+import { apiClient, API_URL } from "../../../api/client";
 
 const CREATOR_ID = "default_creator";
 
@@ -27,7 +27,7 @@ export function useUploadAudio() {
       const formData = new FormData();
       formData.append("file", file);
       
-      const response = await fetch(`http://localhost:8787/api/admin/creator/${CREATOR_ID}/audio`, {
+      const response = await fetch(`${API_URL}/api/admin/creator/${CREATOR_ID}/audio`, {
         method: "POST",
         body: formData,
       });
