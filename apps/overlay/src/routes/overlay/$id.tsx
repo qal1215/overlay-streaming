@@ -2,15 +2,49 @@ import { createFileRoute } from '@tanstack/react-router'
 import { OverlayComponentRenderer } from '@overlay/overlay-renderer'
 import { useLayoutEffect, useState } from 'react'
 import { useOverlayConnection } from '../../hooks/useOverlayConnection'
-import type { OverlayComponent } from '@overlay/schema'
+import type { OverlayComponent, AlertEvent } from '@overlay/schema'
+import { AlertEngine, alertQueue } from '@overlay/alert-engine'
 
+// A simple local preset resolver for Phase 9
+function resolveAlertPreset(event: AlertEvent) {
+  return {
+    id: event.id,
+    preset: {
+      theme: (event.alert?.presetId as any) || "cyberpunk",
+      visual: { layout: "centered" as const },
+      animation: { enterStyle: "fade" as const, exitStyle: "fade" as const },
+      audio: { volume: 0.8 },
+      tts: { enabled: false, voice: "default", volume: 0.8, template: "{name} donated {amount}! {message}" }
+    },
+    data: {
+      donorName: event.actor?.name || "Anonymous",
+      amount: event.actor?.amount || "",
+      message: event.message,
+    },
+    timeline: {
+      duration: event.alert?.duration || 6000,
+      events: [
+        { at: 0, type: "enter" as const, sound: "enter-sound-mock" },
+        { at: 300, type: "impact" as const, sound: "impact-sound-mock" },
+        { at: (event.alert?.duration || 6000) - 500, type: "exit" as const },
+      ]
+    }
+  };
+}
 export const Route = createFileRoute('/overlay/$id')({
   component: OverlayRuntimeRoute,
 })
 
 function OverlayRuntimeRoute() {
   const { id } = Route.useParams()
-  const { connectionState, overlay } = useOverlayConnection(id)
+  
+  const handleAlertEvent = (event: AlertEvent) => {
+    console.log("Received alert:event", event);
+    const alertDef = resolveAlertPreset(event);
+    alertQueue.push(alertDef);
+  };
+
+  const { connectionState, overlay } = useOverlayConnection(id, handleAlertEvent)
   const [scale, setScale] = useState(1);
 
   useLayoutEffect(() => {
@@ -82,6 +116,11 @@ function OverlayRuntimeRoute() {
             />
           </div>
         ))}
+        
+        {/* Render the AlertEngine on top of everything else */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999 }}>
+          <AlertEngine />
+        </div>
       </div>
     </>
   )

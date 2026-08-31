@@ -1,5 +1,6 @@
-import { ArrowLeft, Bell, Save } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { TestAlertButton } from "./TestAlertButton";
 
 interface EditorToolbarProps {
   name: string;
@@ -8,7 +9,6 @@ interface EditorToolbarProps {
   onScaleChange: (scale: number) => void;
   width: number;
   height: number;
-  onTestAlert: () => void;
   onSave: () => void;
   isSaving: boolean;
   overlayId: string;
@@ -21,7 +21,6 @@ export function EditorToolbar({
   onScaleChange,
   width,
   height,
-  onTestAlert,
   onSave,
   isSaving,
   overlayId,
@@ -77,13 +76,7 @@ export function EditorToolbar({
         >
           <span className="font-mono text-xs">Copy OBS Link</span>
         </button>
-        <button
-          onClick={onTestAlert}
-          className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors mr-2"
-        >
-          <Bell size={16} />
-          Test Alert
-        </button>
+        <TestAlertButton />
         <button
           onClick={onSave}
           disabled={isSaving}

@@ -3,6 +3,7 @@ import overlaysRouter from "./overlays";
 import alertsRouter from "./alerts";
 import audioRouter from "./audio";
 import assetsRouter from "./assets";
+import { AlertService } from "../services/alert-service";
 export type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
@@ -69,43 +70,26 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
   const creatorId = c.req.param("id");
   const body = await c.req.json().catch(() => ({}));
 
-  // Create a mock alert event based on requested theme or fallback to cyberpunk
-  const mockAlert = {
-    type: "NEW_ALERT",
-    data: {
-      id: Date.now().toString(),
-      preset: { theme: body.theme || "cyberpunk" },
-      data: {
-        donorName: "Test_Admin",
-        amount: "$100.00",
-        message: "This is a test alert from the admin dashboard!",
-        imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin",
-      },
-      timeline: {
-        duration: 6000,
-        events: [
-          { at: 0, type: "enter", sound: "enter-sound-mock" },
-          { at: 300, type: "impact", sound: "impact-sound-mock" },
-          { at: 5500, type: "exit" },
-        ],
-      },
+  // Create a proper AlertEvent based on the new schema
+  const mockEvent = {
+    id: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    type: "donation" as const,
+    timestamp: Date.now(),
+    actor: {
+      name: body.name || "Test Actor",
+      amount: body.amount || "$10.00",
+      currency: body.currency || "USD",
+    },
+    message: body.message || "This is a test alert from the admin dashboard!",
+    alert: {
+      presetId: body.presetId || "cyberpunk",
     },
   };
 
-  // Get the Durable Object for this creator
-  const id = c.env.OVERLAY_ROOM.idFromName(creatorId);
-  const room = c.env.OVERLAY_ROOM.get(id);
+  const alertService = new AlertService(c.env.DB, c.env.OVERLAY_ROOM);
+  await alertService.dispatchAlert(creatorId, mockEvent);
 
-  // Instead of calling HTTP on the DO, we can use RPC (if enabled) or standard fetch.
-  // We'll use a standard HTTP fetch to the DO to trigger the broadcast.
-  // Wait, the standard way to call a custom method on DO via fetch is sending a custom path or method.
-  // Let's send a POST request to the DO.
-  const response = await room.fetch(new Request("http://do/broadcast", {
-    method: "POST",
-    body: JSON.stringify(mockAlert),
-  }));
-
-  return c.json({ success: true, message: "Test alert triggered" });
+  return c.json({ success: true, message: "Test alert triggered", event: mockEvent });
 });
 
 adminRouter.route("/creator/:id/overlays", overlaysRouter);

@@ -75,3 +75,21 @@ export const AlertDefinitionSchema = z.object({
 });
 
 export type AlertDefinition = z.infer<typeof AlertDefinitionSchema>;
+
+export const AlertEventSchema = z.object({
+  id: z.string(),
+  type: z.enum(["donation", "follow", "subscription", "raid", "custom"]),
+  timestamp: z.number(),
+  actor: z.object({
+    name: z.string(),
+    amount: z.string().optional(),
+    currency: z.string().optional(),
+  }).optional(),
+  message: z.string().optional(),
+  alert: z.object({
+    presetId: z.string().optional(),
+    duration: z.number().optional(),
+  }).optional(),
+});
+
+export type AlertEvent = z.infer<typeof AlertEventSchema>;

@@ -43,13 +43,6 @@ function OverlayEditorPage() {
         onScaleChange={editor.setScale}
         width={overlay.width}
         height={overlay.height}
-        onTestAlert={() => {
-          fetch("http://localhost:8787/api/overlay/default_creator/broadcast", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "DONATION", amount: "$50.00", username: "TestUser123" }),
-          });
-        }}
         onSave={handleSave}
         isSaving={updateOverlay.isPending}
         overlayId={id}
