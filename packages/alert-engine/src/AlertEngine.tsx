@@ -23,68 +23,83 @@ export function AlertEngine() {
       
       console.log("[AlertEngine] Processing alert", instance.event.id);
       
-      if (instance.audio) {
-        if (instance.audio.type === "asset") {
-          console.log("[AudioManager] Preloading:\n", instance.audio.url);
-        } else if (instance.audio.type === "synthetic") {
-          console.log("[AudioManager] Preloading synthetic:\n", instance.audio.preset);
+      try {
+        if (instance.audio) {
+          if (instance.audio.type === "asset") {
+            console.log("[AudioManager] Preloading:\n", instance.audio.url);
+          } else if (instance.audio.type === "synthetic") {
+            console.log("[AudioManager] Preloading synthetic:\n", instance.audio.preset);
+          }
+          await audioManager.preload(instance.audio);
         }
-        await audioManager.preload(instance.audio);
-      }
 
-      for (const event of timeline.events) {
-        if (event.sound) {
-          await audioManager.preload(event.sound, event.sound);
+        for (const event of timeline.events) {
+          if (event.sound) {
+            await audioManager.preload(event.sound, event.sound);
+          }
         }
+      } catch (err) {
+        console.warn("[AlertEngine] Audio preload failed, continuing visually", err);
       }
 
       // Process timeline
       return new Promise<void>((resolve) => {
         const timeouts: ReturnType<typeof setTimeout>[] = [];
-        
         let hasPlayedMainAudio = false;
 
-        // Schedule all timeline events
-        timeline.events.forEach((event: AlertTimelineEvent) => {
-          const timeoutId = setTimeout(() => {
-            console.log(`[AlertEngine] Processing event: ${event.type}`);
-
-            // Handle Visuals
-            if (event.type === "enter") {
-              setIsVisible(true);
-              
-              // Play main audio on enter if not played
-              if (!hasPlayedMainAudio && instance.audio) {
-                hasPlayedMainAudio = true;
-                audioManager.play(instance.audio, alertDef.preset.audio?.volume ?? 0.8);
-              }
-            } else if (event.type === "exit") {
-              setIsVisible(false);
-            }
-
-            // Handle Timeline Specific Audio
-            if (event.sound) {
-              audioManager.play(event.sound, alertDef.preset.audio?.volume ?? 0.8);
-            }
-          }, event.at);
-          timeouts.push(timeoutId);
-        });
-
-        // Setup completion timeout based on duration
-        const completeId = setTimeout(() => {
+        const cleanupAndResolve = () => {
+          timeouts.forEach(clearTimeout);
           setIsVisible(false);
           // Wait a tiny bit for exit animations to finish before resolving the queue item
           setTimeout(() => {
             setCurrentInstance(null);
             resolve();
           }, 1000);
-        }, timeline.duration);
-        timeouts.push(completeId);
-
-        // Cleanup function (though in normal flow we don't clear these unless unmounted)
-        return () => {
-          timeouts.forEach(clearTimeout);
         };
+
+        try {
+          // Schedule all timeline events
+          timeline.events.forEach((event: AlertTimelineEvent) => {
+            const timeoutId = setTimeout(() => {
+              try {
+                console.log(`[AlertEngine] Processing event: ${event.type}`);
+
+                // Handle Visuals
+                if (event.type === "enter") {
+                  setIsVisible(true);
+                  
+                  // Play main audio on enter if not played
+                  if (!hasPlayedMainAudio && instance.audio) {
+                    hasPlayedMainAudio = true;
+                    audioManager.play(instance.audio, alertDef.preset.audio?.volume ?? 0.8);
+                  }
+                } else if (event.type === "exit") {
+                  setIsVisible(false);
+                }
+
+                // Handle Timeline Specific Audio
+                if (event.sound) {
+                  audioManager.play(event.sound, alertDef.preset.audio?.volume ?? 0.8);
+                }
+              } catch (err) {
+                console.error("[AlertEngine] Timeline event execution error", err);
+              }
+            }, event.at);
+            timeouts.push(timeoutId);
+          });
+
+          // Setup completion timeout based on duration
+          const completeId = setTimeout(() => {
+            cleanupAndResolve();
+          }, timeline.duration);
+          timeouts.push(completeId);
+        } catch (err) {
+          console.error("[AlertEngine] Critical timeline setup error", err);
+          cleanupAndResolve();
+        }
+
+        // We don't return the cleanup function to React anymore because 
+        // the queue lifecycle owns it. If the component unmounts, the queue will just discard.
       });
     });
   }, []);
