@@ -39,41 +39,45 @@ function OverlayEditorPage() {
     return asset ? `${API_URL}${asset.url}` : "https://placehold.co/600x400";
   };
 
-  const handleTestAlertLocally = async () => {
-    const targetComponent = editor.components.find((c: any) => c.type === "alert");
+  const handleTestAlertLocally = async (componentId?: string) => {
+    const targetComponent = componentId
+      ? editor.components.find((c: any) => c.id === componentId && c.type === "alert")
+      : editor.components.find((c: any) => c.type === "alert");
+
     if (!targetComponent) {
       console.warn("No AlertComponent found to test locally.");
       return;
     }
 
-    let alertDef;
-    try {
-      const alertId = (targetComponent as any).alertId;
-      const res = await fetch(`${API_URL}/api/admin/creator/default_creator/alerts/${alertId}`);
-      if (!res.ok) throw new Error("Failed to fetch alert definition");
-      alertDef = await res.json();
-      
-      alertDef.data = {
-        ...alertDef.data,
-        donorName: "TestUser",
-        amount: "$50",
-        message: "This is a local canvas test!",
-      };
-      const soundUrl = alertDef.preset.audio?.soundId ? getAssetUrl(alertDef.preset.audio.soundId) : undefined;
-      
-      if (!alertDef.timeline || !alertDef.timeline.events || alertDef.timeline.events.length === 0) {
-        alertDef.timeline = {
-          duration: 5000,
-          events: [
-            { at: 0, type: "enter", sound: soundUrl },
-            { at: 300, type: "impact" },
-            { at: 4500, type: "exit" },
-          ]
-        };
-      }
-    } catch (err) {
-      console.error("Failed to load alert definition for local test", err);
+    const alertId = (targetComponent as any).alertId;
+    let alertDef = runtimeState?.alerts?.[alertId];
+
+    if (!alertDef) {
+      console.error("Failed to load alert definition for local test. Alert not in runtimeState.");
       return;
+    }
+    
+    // Clone to avoid mutating state
+    alertDef = JSON.parse(JSON.stringify(alertDef));
+
+    alertDef.data = {
+      ...alertDef.data,
+      donorName: "TestUser",
+      amount: "$50",
+      message: "This is a local canvas test!",
+    };
+    
+    const soundUrl = alertDef.preset.audio?.soundId ? getAssetUrl(alertDef.preset.audio.soundId) : undefined;
+    
+    if (!alertDef.timeline || !alertDef.timeline.events || alertDef.timeline.events.length === 0) {
+      alertDef.timeline = {
+        duration: 5000,
+        events: [
+          { at: 0, type: "enter", sound: soundUrl },
+          { at: 300, type: "impact" },
+          { at: 4500, type: "exit" },
+        ]
+      };
     }
 
     const mockEvent: AlertEvent = {
@@ -113,7 +117,7 @@ function OverlayEditorPage() {
         onSave={handleSave}
         isSaving={updateOverlay.isPending}
         overlayId={id}
-        onTestAlert={handleTestAlertLocally}
+        onTestAlert={() => handleTestAlertLocally()}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -146,6 +150,7 @@ function OverlayEditorPage() {
         <PropertiesPanel
           component={editor.selectedComponent}
           assets={assets}
+          alerts={runtimeState?.alerts}
           onUpdate={editor.updateComponent}
           onUpdateConfig={editor.updateComponentConfig}
           onMoveZIndex={editor.moveZIndex}
@@ -154,6 +159,7 @@ function OverlayEditorPage() {
             editor.setAssetPickerType(type);
             editor.setAssetPickerOpen(true);
           }}
+          onTestAlert={(componentId) => handleTestAlertLocally(componentId)}
         />
       </div>
 

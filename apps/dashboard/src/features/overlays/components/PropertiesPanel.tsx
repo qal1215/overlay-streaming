@@ -4,21 +4,25 @@ import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 interface PropertiesPanelProps {
   component?: OverlayComponent;
   assets?: any[];
+  alerts?: Record<string, any>;
   onUpdate: (id: string, updates: Partial<OverlayComponent>) => void;
   onUpdateConfig: (id: string, config: any) => void;
   onMoveZIndex: (id: string, direction: "up" | "down") => void;
   onRemove: (id: string) => void;
   onOpenAssetPicker: (type: "image" | "video") => void;
+  onTestAlert?: (componentId: string) => void;
 }
 
 export function PropertiesPanel({
   component,
   assets,
+  alerts,
   onUpdate,
   onUpdateConfig,
   onMoveZIndex,
   onRemove,
   onOpenAssetPicker,
+  onTestAlert,
 }: PropertiesPanelProps) {
   if (!component) {
     return (
@@ -199,17 +203,49 @@ export function PropertiesPanel({
           <div className="space-y-4">
             <div className="bg-white/5 border border-white/10 rounded-lg p-4">
               <label className="text-xs font-medium text-text-muted uppercase mb-3 block">
-                Linked Alert Definition
+                Linked Alert
               </label>
-              <div className="flex flex-col gap-2">
-                <span className="text-sm font-semibold truncate bg-background px-3 py-2 rounded border border-white/5 font-mono">
-                  {/* @ts-ignore */}
-                  {component.alertId}
-                </span>
-                <span className="text-xs text-text-muted mt-1">
-                  Edit this alert's visual properties in the Alerts library.
-                </span>
-              </div>
+              {/* @ts-ignore */}
+              {alerts && alerts[component.alertId] ? (
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm font-semibold truncate bg-background px-3 py-2 rounded border border-white/5 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+                    {/* @ts-ignore */}
+                    {alerts[component.alertId].name || "Custom Alert"}
+                  </span>
+                  
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <button
+                      onClick={() => onTestAlert?.(component.id)}
+                      className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded text-xs font-medium transition-colors"
+                    >
+                      ▶ Preview
+                    </button>
+                    {/* @ts-ignore */}
+                    <a
+                      href={`/alerts/${component.alertId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-primary/20 hover:bg-primary/30 text-primary text-center rounded text-xs font-medium transition-colors"
+                    >
+                      Edit Alert
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+                    <span className="font-bold block mb-1">⚠ Alert Unavailable</span>
+                    This alert may have been deleted or doesn't exist.
+                  </div>
+                  <button
+                    onClick={() => onRemove(component.id)}
+                    className="w-full px-3 py-2 bg-white/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded text-sm transition-colors mt-2"
+                  >
+                    Remove from overlay
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

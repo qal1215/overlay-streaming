@@ -22,7 +22,7 @@ function AlertEditorPage() {
   
   const [name, setName] = useState('')
   const [preset, setPreset] = useState<AlertPreset | null>(null)
-  const [activeTab, setActiveTab] = useState<'visual' | 'animation' | 'audio' | 'tts'>('visual')
+  const [activeTab, setActiveTab] = useState<'general' | 'visual' | 'content' | 'audio'>('general')
   const [previewKey, setPreviewKey] = useState(0) // Used to force re-render/replay animation
   
   // Local state for the preview overlay
@@ -126,108 +126,157 @@ function AlertEditorPage() {
         {/* Left Config Panel */}
         <aside className="w-80 border-r border-white/10 bg-surface/80 backdrop-blur-xl flex flex-col z-10">
           <div className="flex items-center border-b border-white/10 p-2">
+            <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={<Settings size={16}/>} label="General" />
             <TabButton active={activeTab === 'visual'} onClick={() => setActiveTab('visual')} icon={<MonitorPlay size={16}/>} label="Visual" />
-            <TabButton active={activeTab === 'animation'} onClick={() => setActiveTab('animation')} icon={<Settings size={16}/>} label="Motion" />
+            <TabButton active={activeTab === 'content'} onClick={() => setActiveTab('content')} icon={<Type size={16}/>} label="Content" />
             <TabButton active={activeTab === 'audio'} onClick={() => setActiveTab('audio')} icon={<Volume2 size={16}/>} label="Audio" />
-            <TabButton active={activeTab === 'tts'} onClick={() => setActiveTab('tts')} icon={<Mic size={16}/>} label="TTS" />
           </div>
           
           <div className="flex-1 overflow-y-auto p-5">
-            {activeTab === 'visual' && (
+            {activeTab === 'general' && (
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-text-muted">Base Theme</label>
-                  <select 
-                    value={preset.theme}
-                    onChange={(e) => updateTheme(e.target.value as AlertTheme)}
-                    className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                  >
-                    <option value="cyberpunk">Cyberpunk Neon</option>
-                    <option value="minimal">Minimalist Clean</option>
-                    <option value="modern-glass">Modern Glass</option>
-                    <option value="gaming">Hardcore Gaming</option>
-                    <option value="anime">Anime Kawaii</option>
-                    <option value="retro">Retro 80s</option>
-                  </select>
+                  <label className="text-sm font-medium text-text-muted">Alert Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary text-white"
+                  />
                 </div>
-                
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-text-muted">Layout Style</label>
-                  <select 
-                    value={preset.visual?.layout || 'centered'}
-                    onChange={(e) => updatePreset('visual', 'layout', e.target.value)}
-                    className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                  >
-                    <option value="centered">Centered</option>
-                    <option value="side">Side Banner</option>
-                    <option value="banner">Top Banner</option>
-                  </select>
+                {/* Description skipped as it is not currently in the schema */}
+              </div>
+            )}
+
+            {activeTab === 'visual' && (
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">Appearance</h4>
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-text-muted">Base Theme</label>
+                    <select 
+                      value={preset.theme}
+                      onChange={(e) => updateTheme(e.target.value as AlertTheme)}
+                      className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                    >
+                      <option value="cyberpunk">Cyberpunk Neon</option>
+                      <option value="minimal">Minimalist Clean</option>
+                      <option value="modern-glass">Modern Glass</option>
+                      <option value="gaming">Hardcore Gaming</option>
+                      <option value="anime">Anime Kawaii</option>
+                      <option value="retro">Retro 80s</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-text-muted">Layout Style</label>
+                    <select 
+                      value={preset.visual?.layout || 'centered'}
+                      onChange={(e) => updatePreset('visual', 'layout', e.target.value)}
+                      className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                    >
+                      <option value="centered">Centered</option>
+                      <option value="side">Side Banner</option>
+                      <option value="banner">Top Banner</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-text-muted">Primary Color</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="color" 
+                        value={preset.visual?.primaryColor || '#3b82f6'}
+                        onChange={(e) => updatePreset('visual', 'primaryColor', e.target.value)}
+                        className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                      />
+                      <input 
+                        type="text" 
+                        value={preset.visual?.primaryColor || '#3b82f6'}
+                        onChange={(e) => updatePreset('visual', 'primaryColor', e.target.value)}
+                        className="flex-1 bg-background border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-text-muted">Primary Color</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="color" 
-                      value={preset.visual?.primaryColor || '#3b82f6'}
-                      onChange={(e) => updatePreset('visual', 'primaryColor', e.target.value)}
-                      className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">Animation & Timing</h4>
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-text-muted flex justify-between">
+                      <span>Alert Duration</span>
+                      <span>{(preset.animation?.duration ?? 5000) / 1000}s</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="2000"
+                      max="15000"
+                      step="500"
+                      value={preset.animation?.duration ?? 5000}
+                      onChange={(e) => updatePreset('animation', 'duration', parseInt(e.target.value))}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
                     />
-                    <input 
-                      type="text" 
-                      value={preset.visual?.primaryColor || '#3b82f6'}
-                      onChange={(e) => updatePreset('visual', 'primaryColor', e.target.value)}
-                      className="flex-1 bg-background border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary"
-                    />
+                  </div>
+                   <div className="space-y-3">
+                    <label className="text-sm font-medium text-text-muted">Enter Animation</label>
+                    <select 
+                      value={preset.animation?.enterStyle || 'fade'}
+                      onChange={(e) => updatePreset('animation', 'enterStyle', e.target.value)}
+                      className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                    >
+                      <option value="fade">Fade In</option>
+                      <option value="slide">Slide In</option>
+                      <option value="bounce">Bounce</option>
+                      <option value="zoom">Zoom In</option>
+                      <option value="glitch">Glitch Effect</option>
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-text-muted">Exit Animation</label>
+                    <select 
+                      value={preset.animation?.exitStyle || 'fade'}
+                      onChange={(e) => updatePreset('animation', 'exitStyle', e.target.value)}
+                      className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                    >
+                      <option value="fade">Fade Out</option>
+                      <option value="slide">Slide Out</option>
+                      <option value="bounce">Bounce Out</option>
+                      <option value="zoom">Zoom Out</option>
+                      <option value="glitch">Glitch Out</option>
+                    </select>
                   </div>
                 </div>
               </div>
             )}
 
-            {activeTab === 'animation' && (
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-text-muted flex justify-between">
-                    <span>Alert Duration</span>
-                    <span>{(preset.animation?.duration ?? 5000) / 1000}s</span>
+            {activeTab === 'content' && (
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">Templates</h4>
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-text-muted">Message Template</label>
+                    <input 
+                      type="text" 
+                      value={preset.tts?.template || '{name} donated {amount}! {message}'}
+                      onChange={(e) => updatePreset('tts', 'template', e.target.value)}
+                      className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary text-white"
+                      placeholder="{name} says {message}"
+                    />
+                    <p className="text-xs text-text-muted mt-2">Available Variables: <span className="font-mono text-primary/80">{`{name}`}</span>, <span className="font-mono text-primary/80">{`{amount}`}</span>, <span className="font-mono text-primary/80">{`{message}`}</span></p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">Text-to-Speech</h4>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={preset.tts?.enabled || false}
+                      onChange={(e) => updatePreset('tts', 'enabled', e.target.checked)}
+                      className="w-4 h-4 rounded border-white/20 bg-background text-primary focus:ring-primary/50"
+                    />
+                    <span className="text-sm font-medium">Enable TTS Readout</span>
                   </label>
-                  <input
-                    type="range"
-                    min="2000"
-                    max="15000"
-                    step="500"
-                    value={preset.animation?.duration ?? 5000}
-                    onChange={(e) => updatePreset('animation', 'duration', parseInt(e.target.value))}
-                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                </div>
-                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-text-muted">Enter Animation</label>
-                  <select 
-                    value={preset.animation?.enterStyle || 'fade'}
-                    onChange={(e) => updatePreset('animation', 'enterStyle', e.target.value)}
-                    className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                  >
-                    <option value="fade">Fade In</option>
-                    <option value="slide">Slide In</option>
-                    <option value="bounce">Bounce</option>
-                    <option value="zoom">Zoom In</option>
-                    <option value="glitch">Glitch Effect</option>
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-text-muted">Exit Animation</label>
-                  <select 
-                    value={preset.animation?.exitStyle || 'fade'}
-                    onChange={(e) => updatePreset('animation', 'exitStyle', e.target.value)}
-                    className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                  >
-                    <option value="fade">Fade Out</option>
-                    <option value="slide">Slide Out</option>
-                    <option value="bounce">Bounce Out</option>
-                    <option value="zoom">Zoom Out</option>
-                    <option value="glitch">Glitch Out</option>
-                  </select>
                 </div>
               </div>
             )}
@@ -264,36 +313,6 @@ function AlertEditorPage() {
                     />
                  </div>
                </div>
-            )}
-
-            {activeTab === 'tts' && (
-              <div className="space-y-6">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={preset.tts?.enabled || false}
-                    onChange={(e) => updatePreset('tts', 'enabled', e.target.checked)}
-                    className="w-4 h-4 rounded border-white/20 bg-background text-primary focus:ring-primary/50"
-                  />
-                  <span className="text-sm font-medium">Enable Text-to-Speech</span>
-                </label>
-
-                {preset.tts?.enabled && (
-                  <>
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-text-muted">Message Template</label>
-                      <input 
-                        type="text" 
-                        value={preset.tts?.template || '{name} donated {amount}! {message}'}
-                        onChange={(e) => updatePreset('tts', 'template', e.target.value)}
-                        className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                        placeholder="{name} says {message}"
-                      />
-                      <p className="text-xs text-text-muted">Variables: {`{name}, {amount}, {message}`}</p>
-                    </div>
-                  </>
-                )}
-              </div>
             )}
           </div>
         </aside>
