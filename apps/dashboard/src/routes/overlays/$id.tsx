@@ -59,12 +59,13 @@ function OverlayEditorPage() {
         amount: "$50",
         message: "This is a local canvas test!",
       };
+      const soundUrl = alertDef.preset.audio?.soundId ? getAssetUrl(alertDef.preset.audio.soundId) : undefined;
       
       if (!alertDef.timeline || !alertDef.timeline.events || alertDef.timeline.events.length === 0) {
         alertDef.timeline = {
           duration: 5000,
           events: [
-            { at: 0, type: "enter" },
+            { at: 0, type: "enter", sound: soundUrl },
             { at: 300, type: "impact" },
             { at: 4500, type: "exit" },
           ]

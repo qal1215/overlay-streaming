@@ -56,12 +56,21 @@ function OverlayRuntimeRoute() {
     // Use event duration if provided, else fallback to timeline duration or default
     const duration = event.alert?.duration || alertDef.timeline?.duration || 6000;
     
+    const resolveAssetUrl = (assetId?: string) => {
+      if (!assetId) return "";
+      const asset = overlay.assets?.[assetId];
+      const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+      return asset ? `${apiHost}${asset.url}` : "";
+    };
+
+    const soundUrl = alertDef.preset.audio?.soundId ? resolveAssetUrl(alertDef.preset.audio.soundId) : undefined;
+
     // Ensure timeline exists
     if (!alertDef.timeline || !alertDef.timeline.events || alertDef.timeline.events.length === 0) {
       alertDef.timeline = {
         duration,
         events: [
-          { at: 0, type: "enter" },
+          { at: 0, type: "enter", sound: soundUrl },
           { at: 300, type: "impact" },
           { at: duration - 500, type: "exit" },
         ]

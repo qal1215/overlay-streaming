@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAlert, useUpdateAlert } from '../../features/alerts/hooks/useAlerts'
+import { useAudioAssets } from '../../features/audio/hooks/useAudio'
 import { ArrowLeft, Save, Play, MonitorPlay, Type, Settings, Volume2, Mic } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/alerts/$id')({
 function AlertEditorPage() {
   const { id } = Route.useParams()
   const { data: alertData, isLoading } = useAlert(id)
+  const { data: audioFiles } = useAudioAssets()
   const updateAlert = useUpdateAlert()
   
   const [name, setName] = useState('')
@@ -202,6 +204,20 @@ function AlertEditorPage() {
 
             {activeTab === 'audio' && (
                <div className="space-y-6">
+                 <div className="space-y-3">
+                   <label className="text-sm font-medium text-text-muted">Alert Sound</label>
+                   <select 
+                     value={preset.audio?.soundId || ''}
+                     onChange={(e) => updatePreset('audio', 'soundId', e.target.value)}
+                     className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                   >
+                     <option value="">No Sound</option>
+                     {audioFiles?.map((audio: any) => (
+                       <option key={audio.id} value={audio.id}>{audio.name}</option>
+                     ))}
+                   </select>
+                 </div>
+                 
                  <div className="space-y-3">
                     <label className="text-sm font-medium text-text-muted flex justify-between">
                       <span>Volume</span>

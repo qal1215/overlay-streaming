@@ -49,6 +49,7 @@ export const AlertPresetSchema = z.object({
   }).default({ enterStyle: "fade", exitStyle: "fade" }),
   audio: z.object({
     volume: z.number().min(0).max(1).default(0.8),
+    soundId: z.string().optional(),
   }).default({ volume: 0.8 }),
   tts: z.object({
     enabled: z.boolean().default(false),
