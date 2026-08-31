@@ -25,7 +25,7 @@ export const Route = createFileRoute("/overlay/$id")({
 function OverlayRuntimeRoute() {
   const { id } = Route.useParams();
   const { runtime } = Route.useSearch();
-  const isObs = runtime === 'obs';
+  const isObs = runtime === "obs";
   const [scale, setScale] = useState(1);
   const runtimeStateRef = useRef<any>(null); // To always access latest runtime state in handleAlertEvent
 
