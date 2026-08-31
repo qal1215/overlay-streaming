@@ -93,3 +93,21 @@ export const AlertEventSchema = z.object({
 });
 
 export type AlertEvent = z.infer<typeof AlertEventSchema>;
+
+export const AlertPlacementSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  zIndex: z.number(),
+});
+
+export type AlertPlacement = z.infer<typeof AlertPlacementSchema>;
+
+export const AlertInstanceSchema = z.object({
+  event: AlertEventSchema,
+  definition: AlertDefinitionSchema,
+  placement: AlertPlacementSchema,
+});
+
+export type AlertInstance = z.infer<typeof AlertInstanceSchema>;

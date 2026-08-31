@@ -22,6 +22,11 @@ export const ImageComponentSchema = BaseComponentSchema.extend({
   assetId: z.string().optional(), // Used to lookup AssetDefinition from D1
 });
 
+export const AlertComponentSchema = BaseComponentSchema.extend({
+  type: z.literal("alert"),
+  alertId: z.string(),
+});
+
 export const VideoComponentSchema = BaseComponentSchema.extend({
   type: z.literal("video"),
   assetId: z.string().optional(),
@@ -29,7 +34,7 @@ export const VideoComponentSchema = BaseComponentSchema.extend({
 });
 
 export const OverlayComponentSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("alert"), id: z.string(), position: ComponentPositionSchema, size: ComponentSizeSchema, zIndex: z.number().default(0), config: z.record(z.unknown()) }),
+  AlertComponentSchema,
   z.object({ type: z.literal("text"), id: z.string(), position: ComponentPositionSchema, size: ComponentSizeSchema, zIndex: z.number().default(0), config: z.record(z.unknown()) }),
   ImageComponentSchema,
   VideoComponentSchema,

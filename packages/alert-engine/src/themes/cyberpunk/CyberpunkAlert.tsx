@@ -11,7 +11,7 @@ export default function CyberpunkAlert({
 }: BaseAlertProps) {
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center pb-24"
+      className="pointer-events-none absolute inset-0 z-50 flex items-end justify-center pb-24"
       style={{ perspective: 1200 }}
     >
       <AnimatePresence>

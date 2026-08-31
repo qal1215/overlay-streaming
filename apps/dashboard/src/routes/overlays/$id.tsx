@@ -8,6 +8,9 @@ import { LayersPanel } from "../../features/overlays/components/LayersPanel";
 import { OverlayCanvas } from "../../features/overlays/components/OverlayCanvas";
 import { PropertiesPanel } from "../../features/overlays/components/PropertiesPanel";
 import { AssetPickerModal } from "../../features/overlays/components/AssetPickerModal";
+import { OverlayAlertPickerModal } from "../../features/overlays/components/OverlayAlertPickerModal";
+import { alertQueue } from "@overlay/alert-engine";
+import type { AlertEvent, AlertInstance, AlertPlacement } from "@overlay/schema";
 
 export const Route = createFileRoute("/overlays/$id")({
   component: OverlayEditorPage,
@@ -34,6 +37,64 @@ function OverlayEditorPage() {
     return asset ? `http://localhost:8787${asset.url}` : "https://placehold.co/600x400";
   };
 
+  const handleTestAlertLocally = async () => {
+    const targetComponent = editor.components.find((c: any) => c.type === "alert");
+    if (!targetComponent) {
+      console.warn("No AlertComponent found to test locally.");
+      return;
+    }
+
+    let alertDef;
+    try {
+      const res = await fetch(`http://localhost:8787/api/admin/creator/default_creator/alerts/${targetComponent.alertId}`);
+      if (!res.ok) throw new Error("Failed to fetch alert definition");
+      alertDef = await res.json();
+      
+      alertDef.data = {
+        ...alertDef.data,
+        donorName: "TestUser",
+        amount: "$50",
+        message: "This is a local canvas test!",
+      };
+      
+      alertDef.timeline = {
+        duration: 5000,
+        events: [
+          { at: 0, type: "enter" },
+          { at: 300, type: "impact" },
+          { at: 4500, type: "exit" },
+        ]
+      };
+    } catch (err) {
+      console.error("Failed to load alert definition for local test", err);
+      return;
+    }
+
+    const mockEvent: AlertEvent = {
+      id: `evt_${Date.now()}`,
+      type: "donation",
+      timestamp: Date.now(),
+      actor: { name: "TestUser", amount: "$50" },
+      message: "This is a local canvas test!",
+    };
+
+    const placement: AlertPlacement = {
+      x: targetComponent.position.x,
+      y: targetComponent.position.y,
+      width: targetComponent.size.width,
+      height: targetComponent.size.height,
+      zIndex: targetComponent.zIndex,
+    };
+
+    const instance: AlertInstance = {
+      event: mockEvent,
+      definition: alertDef,
+      placement,
+    };
+
+    alertQueue.push(instance);
+  };
+
   return (
     <div className="h-full flex flex-col -m-8">
       <EditorToolbar
@@ -46,11 +107,18 @@ function OverlayEditorPage() {
         onSave={handleSave}
         isSaving={updateOverlay.isPending}
         overlayId={id}
+        onTestAlert={handleTestAlertLocally}
       />
 
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-64 border-r border-white/10 bg-surface/80 p-4 overflow-y-auto flex flex-col z-10 backdrop-blur-md">
-          <ComponentToolbar onAdd={editor.handleAddComponent} />
+          <ComponentToolbar onAdd={(type) => {
+            if (type === "alert") {
+              editor.setAlertPickerOpen(true);
+            } else {
+              editor.handleAddComponent(type);
+            }
+          }} />
           <LayersPanel
             components={editor.components}
             selectedId={editor.selectedId}
@@ -93,6 +161,15 @@ function OverlayEditorPage() {
             editor.updateComponent(editor.selectedId, { assetId });
           }
           editor.setAssetPickerOpen(false);
+        }}
+      />
+
+      <OverlayAlertPickerModal
+        isOpen={editor.alertPickerOpen}
+        onClose={() => editor.setAlertPickerOpen(false)}
+        onSelect={(alertId) => {
+          editor.addAlertComponent(alertId);
+          editor.setAlertPickerOpen(false);
         }}
       />
     </div>

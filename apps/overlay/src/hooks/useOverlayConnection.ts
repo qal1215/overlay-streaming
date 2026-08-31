@@ -11,6 +11,11 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const backoffRef = useRef(1000); // Start with 1 second
+  
+  const onAlertEventRef = useRef(onAlertEvent);
+  useEffect(() => {
+    onAlertEventRef.current = onAlertEvent;
+  }, [onAlertEvent]);
 
   useEffect(() => {
     if (!overlayId) return;
@@ -42,8 +47,8 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
           if (parsed.type === 'overlay:init' || parsed.type === 'overlay:update') {
             setOverlay(parsed.overlay);
           } else if (parsed.type === 'alert:event') {
-            if (onAlertEvent) {
-              onAlertEvent(parsed.event);
+            if (onAlertEventRef.current) {
+              onAlertEventRef.current(parsed.event);
             }
           } else if (parsed.type === 'error') {
             console.error('Overlay error:', parsed.message);

@@ -9,7 +9,7 @@ export default function MinimalAlert({
   imageUrl,
 }: BaseAlertProps) {
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center">
       <AnimatePresence>
         {isVisible && (
           <motion.div

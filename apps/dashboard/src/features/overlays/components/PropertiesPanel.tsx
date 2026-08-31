@@ -194,6 +194,25 @@ export function PropertiesPanel({
             </div>
           </div>
         )}
+
+        {component.type === "alert" && (
+          <div className="space-y-4">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <label className="text-xs font-medium text-text-muted uppercase mb-3 block">
+                Linked Alert Definition
+              </label>
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-semibold truncate bg-background px-3 py-2 rounded border border-white/5 font-mono">
+                  {/* @ts-ignore */}
+                  {component.alertId}
+                </span>
+                <span className="text-xs text-text-muted mt-1">
+                  Edit this alert's visual properties in the Alerts library.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );

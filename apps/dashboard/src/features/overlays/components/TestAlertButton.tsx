@@ -3,22 +3,25 @@ import { Bell, Loader2 } from "lucide-react";
 
 interface TestAlertButtonProps {
   creatorId?: string;
+  overlayId?: string;
+  onTestLocally?: () => void;
 }
 
-export function TestAlertButton({ creatorId = "default_creator" }: TestAlertButtonProps) {
+export function TestAlertButton({ creatorId = "default_creator", overlayId, onTestLocally }: TestAlertButtonProps) {
   const [isSending, setIsSending] = useState(false);
 
   const handleTestAlert = async () => {
     setIsSending(true);
+    if (onTestLocally) onTestLocally();
     try {
       await fetch(`http://localhost:8787/api/admin/creator/${creatorId}/test-alert`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "Aka",
-          amount: "$10",
-          message: "Thanks!",
-          presetId: "cyberpunk",
+          name: "TestUser",
+          amount: "$50",
+          message: "This is a test alert!",
+          overlayId,
         }),
       });
     } catch (err) {

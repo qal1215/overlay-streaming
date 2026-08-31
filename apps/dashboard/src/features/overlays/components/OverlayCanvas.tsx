@@ -1,6 +1,7 @@
 import type { OverlayComponent } from "@overlay/schema";
 import { Rnd } from "react-rnd";
 import { OverlayComponentRenderer } from "@overlay/overlay-renderer";
+import { AlertEngine } from "@overlay/alert-engine";
 
 interface OverlayCanvasProps {
   components: OverlayComponent[];
@@ -78,10 +79,13 @@ export function OverlayCanvas({
               } transition-colors cursor-move`}
             >
               <div className="w-full h-full relative group">
-                <OverlayComponentRenderer component={comp} resolveAssetUrl={resolveAssetUrl} />
+                <OverlayComponentRenderer component={comp} resolveAssetUrl={resolveAssetUrl} isEditor={true} />
               </div>
             </Rnd>
           ))}
+
+          {/* Render real AlertEngine for local canvas testing */}
+          <AlertEngine />
         </div>
       </div>
     </main>

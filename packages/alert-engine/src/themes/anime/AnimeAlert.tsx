@@ -9,7 +9,7 @@ export default function AnimeAlert({
   imageUrl,
 }: BaseAlertProps) {
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center overflow-hidden">
       <AnimatePresence>
         {isVisible && (
           <motion.div

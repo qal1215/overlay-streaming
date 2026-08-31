@@ -65,7 +65,6 @@ adminRouter.put("/creator/:id/config", async (c) => {
   return c.json({ error: "Failed to update config" }, 500);
 });
 
-// Trigger a test alert to the creator's overlay
 adminRouter.post("/creator/:id/test-alert", async (c) => {
   const creatorId = c.req.param("id");
   const body = await c.req.json().catch(() => ({}));
@@ -82,12 +81,27 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
     },
     message: body.message || "This is a test alert from the admin dashboard!",
     alert: {
-      presetId: body.presetId || "cyberpunk",
+      presetId: body.presetId || undefined,
     },
   };
 
-  const alertService = new AlertService(c.env.DB, c.env.OVERLAY_ROOM);
-  await alertService.dispatchAlert(creatorId, mockEvent);
+  // The client connects to DO using overlayId, so we must broadcast to the correct overlay
+  if (body.overlayId) {
+    const doId = c.env.OVERLAY_ROOM.idFromName(body.overlayId);
+    const room = c.env.OVERLAY_ROOM.get(doId);
+    
+    await room.fetch(new Request("http://do/broadcast", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "alert:event",
+        event: mockEvent,
+      }),
+    }));
+  } else {
+    // Fallback to legacy AlertService behavior if no overlayId is provided
+    const alertService = new AlertService(c.env.DB, c.env.OVERLAY_ROOM);
+    await alertService.dispatchAlert(creatorId, mockEvent);
+  }
 
   return c.json({ success: true, message: "Test alert triggered", event: mockEvent });
 });

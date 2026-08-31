@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import type { AlertDefinition, AlertTimelineEvent } from "@overlay/schema";
+import type { AlertInstance, AlertTimelineEvent } from "@overlay/schema";
 import { alertQueue } from "./AlertQueue";
 import { audioManager } from "@overlay/audio-engine";
 import AlertRenderer from "./AlertRenderer";
 
 export function AlertEngine() {
-  const [currentAlert, setCurrentAlert] = useState<AlertDefinition | null>(
+  const [currentInstance, setCurrentInstance] = useState<AlertInstance | null>(
     null,
   );
   const [isVisible, setIsVisible] = useState(false);
@@ -13,8 +13,9 @@ export function AlertEngine() {
   useEffect(() => {
     // We register the AlertEngine as the processor for the AlertQueue.
     // The queue guarantees this callback is only run for one alert at a time.
-    alertQueue.setProcessor(async (alertDef: AlertDefinition) => {
-      setCurrentAlert(alertDef);
+    alertQueue.setProcessor(async (instance: AlertInstance) => {
+      setCurrentInstance(instance);
+      const alertDef = instance.definition;
 
       // Process timeline
       return new Promise<void>((resolve) => {
@@ -33,7 +34,7 @@ export function AlertEngine() {
           setIsVisible(false);
           // Wait a tiny bit for exit animations to finish before resolving the queue item
           setTimeout(() => {
-            setCurrentAlert(null);
+            setCurrentInstance(null);
             resolve();
           }, 1000);
         }, alertDef.timeline.duration);
@@ -63,19 +64,30 @@ export function AlertEngine() {
     }
   };
 
-  if (!currentAlert) return null;
+  if (!currentInstance) return null;
 
   return (
-    <AlertRenderer
-      currentAlert={{
-        id: currentAlert.id,
-        theme: currentAlert.preset.theme,
-        donorName: currentAlert.data.donorName,
-        amount: currentAlert.data.amount,
-        message: currentAlert.data.message,
-        imageUrl: currentAlert.data.imageUrl,
+    <div
+      style={{
+        position: "absolute",
+        left: currentInstance.placement.x,
+        top: currentInstance.placement.y,
+        width: currentInstance.placement.width,
+        height: currentInstance.placement.height,
+        zIndex: currentInstance.placement.zIndex,
       }}
-      isVisible={isVisible}
-    />
+    >
+      <AlertRenderer
+        currentAlert={{
+          id: currentInstance.definition.id,
+          theme: currentInstance.definition.preset.theme,
+          donorName: currentInstance.definition.data.donorName,
+          amount: currentInstance.definition.data.amount,
+          message: currentInstance.definition.data.message,
+          imageUrl: currentInstance.definition.data.imageUrl,
+        }}
+        isVisible={isVisible}
+      />
+    </div>
   );
 }

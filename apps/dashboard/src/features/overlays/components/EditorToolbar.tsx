@@ -12,6 +12,7 @@ interface EditorToolbarProps {
   onSave: () => void;
   isSaving: boolean;
   overlayId: string;
+  onTestAlert?: () => void;
 }
 
 export function EditorToolbar({
@@ -24,6 +25,7 @@ export function EditorToolbar({
   onSave,
   isSaving,
   overlayId,
+  onTestAlert,
 }: EditorToolbarProps) {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(
@@ -76,7 +78,7 @@ export function EditorToolbar({
         >
           <span className="font-mono text-xs">Copy OBS Link</span>
         </button>
-        <TestAlertButton />
+        <TestAlertButton overlayId={overlayId} onTestLocally={onTestAlert} />
         <button
           onClick={onSave}
           disabled={isSaving}

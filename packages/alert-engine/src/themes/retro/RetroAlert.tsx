@@ -28,7 +28,7 @@ export default function RetroAlert({
         `}
       </style>
 
-      <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-8">
+      <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center p-8">
         <AnimatePresence>
           {isVisible && (
             <motion.div

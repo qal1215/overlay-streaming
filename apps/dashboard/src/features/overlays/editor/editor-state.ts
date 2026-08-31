@@ -10,6 +10,9 @@ export function useOverlayEditor(initialOverlay: any) {
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
   const [assetPickerType, setAssetPickerType] = useState<"image" | "video">("image");
 
+  // Alert Picker State
+  const [alertPickerOpen, setAlertPickerOpen] = useState(false);
+
   const [scale, setScale] = useState(0.5);
 
   useEffect(() => {
@@ -37,6 +40,19 @@ export function useOverlayEditor(initialOverlay: any) {
       newComp.loop = true;
     }
 
+    setComponents([...components, newComp]);
+    setSelectedId(newComp.id);
+  };
+
+  const addAlertComponent = (alertId: string) => {
+    let newComp: any = {
+      id: crypto.randomUUID(),
+      type: "alert",
+      alertId,
+      position: { x: 100, y: 100 },
+      size: { width: 400, height: 250 },
+      zIndex: components.length,
+    };
     setComponents([...components, newComp]);
     setSelectedId(newComp.id);
   };
@@ -99,7 +115,10 @@ export function useOverlayEditor(initialOverlay: any) {
     setAssetPickerOpen,
     assetPickerType,
     setAssetPickerType,
+    alertPickerOpen,
+    setAlertPickerOpen,
     handleAddComponent,
+    addAlertComponent,
     updateComponent,
     updateComponentConfig,
     removeComponent,
