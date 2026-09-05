@@ -19,13 +19,24 @@ export const PaymentAccountSchema = z.object({
 
 export type PaymentAccount = z.infer<typeof PaymentAccountSchema>;
 
-export const CreatorDonationSettingsSchema = z.object({
+export const CreatorDonationSettingsResponseSchema = z.object({
   creatorId: z.string(),
   donationSettings: DonationSettingsSchema,
   paymentAccount: PaymentAccountSchema,
+  sepayWebhookConfigured: z.boolean().default(false),
+  sepayWebhookUrl: z.string().optional(),
 });
 
-export type CreatorDonationSettings = z.infer<typeof CreatorDonationSettingsSchema>;
+export type CreatorDonationSettingsResponse = z.infer<typeof CreatorDonationSettingsResponseSchema>;
+
+export const UpdateCreatorDonationSettingsSchema = z.object({
+  creatorId: z.string(),
+  donationSettings: DonationSettingsSchema,
+  paymentAccount: PaymentAccountSchema,
+  sepayWebhookSecret: z.string().min(32).max(256).optional(),
+});
+
+export type UpdateCreatorDonationSettings = z.infer<typeof UpdateCreatorDonationSettingsSchema>;
 
 // Public settings for the donor page (secrets removed)
 export const PublicDonationSettingsSchema = z.object({

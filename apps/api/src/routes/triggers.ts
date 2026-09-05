@@ -6,13 +6,13 @@ import { AlertService } from "../services/alert-service";
 const triggersRouter = new Hono<{ Bindings: Bindings }>();
 
 triggersRouter.get("/", async (c) => {
-  const creatorId = c.req.param("id");
+  const creatorId = c.req.param("id")!;
   const triggers = await triggerQueries.getTriggersByCreator(c.env.DB, creatorId);
   return c.json(triggers);
 });
 
 triggersRouter.post("/", async (c) => {
-  const creatorId = c.req.param("id");
+  const creatorId = c.req.param("id")!;
   const body = await c.req.json();
 
   const { source, eventType, alertId, enabled } = body;
@@ -49,7 +49,7 @@ triggersRouter.post("/", async (c) => {
 });
 
 triggersRouter.patch("/:triggerId", async (c) => {
-  const creatorId = c.req.param("id");
+  const creatorId = c.req.param("id")!;
   const triggerId = c.req.param("triggerId");
   const body = await c.req.json();
 
@@ -76,7 +76,7 @@ triggersRouter.patch("/:triggerId", async (c) => {
 });
 
 triggersRouter.delete("/:triggerId", async (c) => {
-  const creatorId = c.req.param("id");
+  const creatorId = c.req.param("id")!;
   const triggerId = c.req.param("triggerId");
   
   await triggerQueries.deleteTrigger(c.env.DB, triggerId, creatorId);

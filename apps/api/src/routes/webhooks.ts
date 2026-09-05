@@ -6,11 +6,33 @@ import { TriggerMapper } from "../services/trigger-mapper";
 import { ResolvedAlertEvent } from "@overlay/schema";
 import { SePayAdapter } from "../services/adapters/SePayAdapter";
 import { DonationService } from "../services/DonationService";
+import { SecretEncryptionService } from "../services/SecretEncryptionService";
 
 const webhooksRouter = new Hono<{ Bindings: Bindings }>();
 
-webhooksRouter.post("/sepay", async (c) => {
-  const adapter = new SePayAdapter(c.env.WEBHOOK_SECRET || "default_secret");
+webhooksRouter.post("/sepay/:creatorId", async (c) => {
+  const creatorId = c.req.param("creatorId");
+
+  // Load creator settings
+  const settingsRow = await c.env.DB.prepare(
+    "SELECT * FROM creator_donation_settings WHERE creator_id = ?"
+  ).bind(creatorId).first<any>();
+
+  if (!settingsRow || !settingsRow.sepay_webhook_secret || !settingsRow.enabled || settingsRow.payment_provider !== 'sepay') {
+    return c.json({ error: "SePay webhook is not configured" }, 404);
+  }
+
+  // Decrypt secret
+  let secret = "";
+  try {
+    const encryptor = new SecretEncryptionService(c.env.PLATFORM_ENCRYPTION_KEY);
+    secret = await encryptor.decrypt(settingsRow.sepay_webhook_secret);
+  } catch (e) {
+    console.error("Failed to decrypt webhook secret", e);
+    return c.json({ error: "Internal Configuration Error" }, 500);
+  }
+
+  const adapter = new SePayAdapter(secret);
   
   // 1. Signature validation
   const signature = c.req.header("X-SePay-Signature") || "";
@@ -37,65 +59,103 @@ webhooksRouter.post("/sepay", async (c) => {
     const { SePayWebhookPayloadSchema } = await import("@overlay/schema");
     const payloadResult = SePayWebhookPayloadSchema.safeParse(body);
     if (!payloadResult.success) {
-      return c.json({ error: "Malformed payload", details: payloadResult.error }, 400);
+      console.error("[SePay Webhook] Malformed payload details:", payloadResult.error);
+      return c.json({ error: "Malformed payload" }, 400);
     }
 
-    // 2. Normalization
+    // 2. Validate destination account
+    if (payloadResult.data.accountNumber !== settingsRow.payment_account_number) {
+      return c.json({ error: "Destination account mismatch" }, 400);
+    }
+
+    // 3. Normalization
     const paymentEvent = adapter.normalize(payloadResult.data);
+    const eventId = paymentEvent.transactionId;
+    const source = paymentEvent.provider;
 
-    // 3. Webhook Idempotency (processed_events)
-    // Extract creatorId from the referenceCode (DONATE-QAL-8F32KD -> QAL)
-    // For MVP, we might need a way to look up creatorId from donation first,
-    // but the idempotency is provider-scoped, so we can use a system-wide or generic creatorId for the idempotency row
-    // if creator is unknown at this stage. Actually, we can look up the donation first.
-    const donationService = new DonationService(c.env.DB);
-    const donation = await donationService.getDonationByReference(paymentEvent.referenceCode);
-    
-    if (!donation) {
-      console.log(`[Webhook] No donation found for reference ${paymentEvent.referenceCode}`);
-      return c.json({ success: true, message: "Donation not found, ignoring" }, 200);
-    }
+    // 4. Idempotency Check
+    const eventRow = await c.env.DB.prepare(
+      "SELECT status, attempts FROM processed_events WHERE creator_id = ? AND source = ? AND event_id = ?"
+    ).bind(creatorId, source, eventId).first<any>();
 
-    const creatorId = donation.creator_id;
-
-    try {
-      await c.env.DB.prepare(
-        `INSERT INTO processed_events (event_id, creator_id, source) VALUES (?, ?, ?)`
-      )
-        .bind(paymentEvent.transactionId, creatorId, paymentEvent.provider)
-        .run();
-    } catch (e: any) {
-      if (e.message && e.message.includes("UNIQUE constraint failed")) {
-        console.log(`[Webhook] Duplicate sepay event ignored: ${paymentEvent.transactionId}`);
-        return c.json({ success: true, message: "Duplicate event ignored" }, 200);
+    if (eventRow) {
+      if (eventRow.status === 'COMPLETED') {
+        return c.json({ success: true, message: "Duplicate event already completed" }, 200);
       }
-      throw e;
+      if (eventRow.status === 'PROCESSING') {
+        return c.json({ success: true, message: "Event is currently processing" }, 200);
+      }
+      // FAILED or RECEIVED, we will increment attempt
+      await c.env.DB.prepare(
+        "UPDATE processed_events SET status = 'PROCESSING', attempts = attempts + 1 WHERE creator_id = ? AND source = ? AND event_id = ?"
+      ).bind(creatorId, source, eventId).run();
+    } else {
+      await c.env.DB.prepare(
+        "INSERT INTO processed_events (event_id, creator_id, source, status, attempts) VALUES (?, ?, ?, 'PROCESSING', 1)"
+      ).bind(eventId, creatorId, source).run();
     }
 
-    // 4. DonationService processing
-    const alertEvent = await donationService.processPaymentEvent(paymentEvent);
+    let alertEvent;
+    try {
+      // 5. DonationService processing
+      const donationService = new DonationService(c.env.DB);
+      const donation = await donationService.getDonationByReference(paymentEvent.referenceCode);
+      
+      if (!donation) {
+        throw new Error(`Donation not found for reference ${paymentEvent.referenceCode}`);
+      }
+
+      if (donation.creator_id !== creatorId) {
+        throw new Error(`Donation ownership mismatch`);
+      }
+
+      alertEvent = await donationService.processPaymentEvent(paymentEvent);
+    } catch (e: any) {
+      await c.env.DB.prepare(
+        "UPDATE processed_events SET status = 'FAILED', last_error = ?, processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ?"
+      ).bind(e.message, creatorId, source, eventId).run();
+      console.error("SePay webhook processing error:", e);
+      return c.json({ error: "Payment processing failed" }, 400);
+    }
 
     if (!alertEvent) {
-       return c.json({ success: true, message: "Payment processed but no alert generated (already paid or invalid)" });
+       // Could be already paid or invalid without throwing, mark completed anyway
+       await c.env.DB.prepare(
+        "UPDATE processed_events SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ?"
+      ).bind(creatorId, source, eventId).run();
+       return c.json({ success: true, message: "Payment ignored or already processed" });
     }
 
-    // 5. Trigger Mapper & Alert Dispatch
-    const triggerMapper = new TriggerMapper(c.env.DB);
-    const alertId = await triggerMapper.resolve(creatorId, alertEvent.source, alertEvent.type);
+    // 6. Trigger Mapper & Alert Dispatch
+    try {
+      const triggerMapper = new TriggerMapper(c.env.DB);
+      const alertId = await triggerMapper.resolve(creatorId, alertEvent.source, alertEvent.type);
 
-    if (alertId) {
-      const resolvedEvent: ResolvedAlertEvent = {
-        event: alertEvent,
-        alertId,
-      };
-      const alertService = new AlertService(c.env.DB, c.env.OVERLAY_ROOM);
-      await alertService.dispatchAlert(creatorId, resolvedEvent);
+      if (alertId) {
+        const resolvedEvent: ResolvedAlertEvent = {
+          event: alertEvent,
+          alertId,
+        };
+        const alertService = new AlertService(c.env.DB, c.env.OVERLAY_ROOM);
+        await alertService.dispatchAlert(creatorId, resolvedEvent);
+      }
+
+      await c.env.DB.prepare(
+        "UPDATE processed_events SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ?"
+      ).bind(creatorId, source, eventId).run();
+      
+      return c.json({ success: true });
+    } catch (e: any) {
+      await c.env.DB.prepare(
+        "UPDATE processed_events SET status = 'FAILED', last_error = ?, processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ?"
+      ).bind(e.message, creatorId, source, eventId).run();
+      console.error("SePay webhook alert dispatch error:", e);
+      // Return 500 so provider retries
+      return c.json({ error: "Alert dispatch failed" }, 500);
     }
-
-    return c.json({ success: true });
   } catch (e: any) {
     console.error("SePay webhook error:", e);
-    return c.json({ error: e.message }, 500);
+    return c.json({ error: "Internal Server Error" }, 500);
   }
 });
 
@@ -103,8 +163,9 @@ webhooksRouter.post("/:creatorId", async (c) => {
   const creatorId = c.req.param("creatorId");
   
   // 1. Simple Authentication
+  // Use ADMIN_SECRET fallback since WEBHOOK_SECRET is removed from global env
   const authHeader = c.req.header("X-Webhook-Secret") || c.req.header("Authorization");
-  const expectedSecret = c.env.WEBHOOK_SECRET || "default_secret";
+  const expectedSecret = c.env.ADMIN_SECRET || "default_secret";
   
   let isAuthed = false;
   if (authHeader === expectedSecret || authHeader === `Bearer ${expectedSecret}`) {
@@ -132,7 +193,7 @@ webhooksRouter.post("/:creatorId", async (c) => {
     // 4. Idempotency Check (Insert before mapping resolution)
     try {
       await c.env.DB.prepare(
-        `INSERT INTO processed_events (event_id, creator_id, source) VALUES (?, ?, ?)`
+        `INSERT INTO processed_events (event_id, creator_id, source, status, processed_at) VALUES (?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP)`
       )
         .bind(alertEvent.eventId, creatorId, alertEvent.source)
         .run();

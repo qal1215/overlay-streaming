@@ -8,7 +8,9 @@ export type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
   ASSETS_BUCKET: R2Bucket;
-  WEBHOOK_SECRET?: string;
+  PLATFORM_ENCRYPTION_KEY?: string;
+  ADMIN_SECRET?: string;
+  PUBLIC_API_URL?: string;
 };
 
 const adminRouter = new Hono<{ Bindings: Bindings }>();
@@ -16,7 +18,12 @@ const adminRouter = new Hono<{ Bindings: Bindings }>();
 // Admin Access Context & Ownership boundary
 async function authorizeCreatorAccess(c: any, creatorId: string): Promise<boolean> {
   const authHeader = c.req.header("Authorization") || c.req.header("X-Admin-Secret");
-  const adminSecret = c.env.ADMIN_SECRET || c.env.WEBHOOK_SECRET || "default_admin_secret"; // Fallback for MVP if not set
+  const adminSecret = c.env.ADMIN_SECRET;
+
+  if (!adminSecret) {
+    console.error("ADMIN_SECRET is not configured");
+    return false;
+  }
 
   // In the future (Phase 15/16), this will verify JWT/session identity and check if the user owns creatorId.
   // For now, we use a simple shared secret to protect the admin routes from arbitrary public access.

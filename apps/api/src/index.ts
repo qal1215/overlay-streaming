@@ -10,7 +10,8 @@ type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
   ASSETS_BUCKET: R2Bucket;
-  WEBHOOK_SECRET?: string;
+  ADMIN_SECRET?: string;
+  PLATFORM_ENCRYPTION_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -93,7 +94,7 @@ app.post("/api/overlay/:id/broadcast", async (c) => {
 
   // Basic authorization boundary for broadcast (should match AdminAccessMiddleware)
   const authHeader = c.req.header("Authorization") || c.req.header("X-Admin-Secret");
-  const adminSecret = c.env.ADMIN_SECRET || c.env.WEBHOOK_SECRET || "default_admin_secret";
+  const adminSecret = c.env.ADMIN_SECRET || "default_admin_secret";
   
   if (authHeader !== adminSecret && authHeader !== `Bearer ${adminSecret}`) {
     return c.json({ error: "Unauthorized broadcast access" }, 401);

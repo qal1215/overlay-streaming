@@ -29,5 +29,8 @@
       "tag": "v1",
       "new_classes": ["OverlayRoom"]
     }
-  ]
+  ],
+  "vars": {
+    "PUBLIC_API_URL": "https://api.overlay.local"
+  }
 }

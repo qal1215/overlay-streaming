@@ -47,12 +47,15 @@ export class DonationService {
 
     // 6. Check affected rows (atomic transition protection)
     if (updateResult.meta.changes !== 1) {
-      console.log(`[DonationService] Donation ${donation.id} already paid, not PENDING, or expired.`);
-      // Return null so we don't emit a duplicate alert
-      return null;
+      if (donation.status === 'PAID' && donation.provider_transaction_id === event.transactionId) {
+        console.log(`[DonationService] Donation ${donation.id} already paid by this event. Emitting alert event for retry.`);
+      } else {
+        console.log(`[DonationService] Donation ${donation.id} transition failed (already paid, not PENDING, or expired).`);
+        return null;
+      }
+    } else {
+      console.log(`[DonationService] Successfully transitioned donation ${donation.id} to PAID.`);
     }
-
-    console.log(`[DonationService] Successfully transitioned donation ${donation.id} to PAID.`);
 
     // 7. Emit AlertEvent
     return {
