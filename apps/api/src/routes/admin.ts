@@ -114,11 +114,13 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
 });
 
 import triggersRouter from "./triggers";
+import creatorSettingsRouter from "./creator-settings";
 
 adminRouter.route("/creator/:id/overlays", overlaysRouter);
 adminRouter.route("/creator/:id/alerts", alertsRouter);
 adminRouter.route("/creator/:id/audio", audioRouter);
 adminRouter.route("/creator/:id/assets", assetsRouter);
 adminRouter.route("/creator/:id/triggers", triggersRouter);
+adminRouter.route("/creator/:id", creatorSettingsRouter);
 
 export default adminRouter;

@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 
 import adminRouter from "./routes/admin";
 import webhooksRouter from "./routes/webhooks";
+import donationsRouter from "./routes/donations";
 import { OverlayRoom } from "./durable-objects/OverlayRoom";
 
 type Bindings = {
@@ -24,6 +25,7 @@ app.use(
 
 app.route("/api/admin", adminRouter);
 app.route("/api/webhooks", webhooksRouter);
+app.route("/api/public", donationsRouter);
 
 // Serve R2 Assets by Object Key OR Asset ID
 app.get("/api/assets/*", async (c) => {

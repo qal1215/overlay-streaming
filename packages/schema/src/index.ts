@@ -5,3 +5,6 @@ export * from "./component";
 export * from "./creator";
 export * from "./event";
 export * from "./overlay";
+export * from "./payment";
+export * from "./donation";
+export * from "./creatorSettings";

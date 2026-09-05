@@ -17,6 +17,10 @@ import { Route as AlertsIdRouteImport } from './routes/alerts/$id'
 import { Route as AlertsPresetsRouteImport } from './routes/alerts/presets'
 import { Route as AssetsIndexRouteImport } from './routes/assets/index'
 import { Route as AudioIndexRouteImport } from './routes/audio/index'
+import { Route as DonateCreatorIdRouteImport } from './routes/donate/$creatorId'
+import { Route as DonationsIndexRouteImport } from './routes/donations/index'
+import { Route as DonationsHistoryRouteImport } from './routes/donations/history'
+import { Route as DonationsSettingsRouteImport } from './routes/donations/settings'
 import { Route as OverlaysIndexRouteImport } from './routes/overlays/index'
 import { Route as OverlaysIdRouteImport } from './routes/overlays/$id'
 
@@ -60,6 +64,26 @@ const AudioIndexRoute = AudioIndexRouteImport.update({
   path: '/audio/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DonateCreatorIdRoute = DonateCreatorIdRouteImport.update({
+  id: '/donate/$creatorId',
+  path: '/donate/$creatorId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DonationsIndexRoute = DonationsIndexRouteImport.update({
+  id: '/donations/',
+  path: '/donations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DonationsHistoryRoute = DonationsHistoryRouteImport.update({
+  id: '/donations/history',
+  path: '/donations/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DonationsSettingsRoute = DonationsSettingsRouteImport.update({
+  id: '/donations/settings',
+  path: '/donations/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OverlaysIndexRoute = OverlaysIndexRouteImport.update({
   id: '/overlays/',
   path: '/overlays/',
@@ -77,10 +101,14 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
+  '/donate/$creatorId': typeof DonateCreatorIdRoute
+  '/donations/history': typeof DonationsHistoryRoute
+  '/donations/settings': typeof DonationsSettingsRoute
   '/overlays/$id': typeof OverlaysIdRoute
   '/alerts/': typeof AlertsIndexRoute
   '/assets/': typeof AssetsIndexRoute
   '/audio/': typeof AudioIndexRoute
+  '/donations/': typeof DonationsIndexRoute
   '/overlays/': typeof OverlaysIndexRoute
 }
 export interface FileRoutesByTo {
@@ -89,10 +117,14 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
+  '/donate/$creatorId': typeof DonateCreatorIdRoute
+  '/donations/history': typeof DonationsHistoryRoute
+  '/donations/settings': typeof DonationsSettingsRoute
   '/overlays/$id': typeof OverlaysIdRoute
   '/alerts': typeof AlertsIndexRoute
   '/assets': typeof AssetsIndexRoute
   '/audio': typeof AudioIndexRoute
+  '/donations': typeof DonationsIndexRoute
   '/overlays': typeof OverlaysIndexRoute
 }
 export interface FileRoutesById {
@@ -102,10 +134,14 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
+  '/donate/$creatorId': typeof DonateCreatorIdRoute
+  '/donations/history': typeof DonationsHistoryRoute
+  '/donations/settings': typeof DonationsSettingsRoute
   '/overlays/$id': typeof OverlaysIdRoute
   '/alerts/': typeof AlertsIndexRoute
   '/assets/': typeof AssetsIndexRoute
   '/audio/': typeof AudioIndexRoute
+  '/donations/': typeof DonationsIndexRoute
   '/overlays/': typeof OverlaysIndexRoute
 }
 export interface FileRouteTypes {
@@ -116,10 +152,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
+    | '/donate/$creatorId'
+    | '/donations/history'
+    | '/donations/settings'
     | '/overlays/$id'
     | '/alerts/'
     | '/assets/'
     | '/audio/'
+    | '/donations/'
     | '/overlays/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -128,10 +168,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
+    | '/donate/$creatorId'
+    | '/donations/history'
+    | '/donations/settings'
     | '/overlays/$id'
     | '/alerts'
     | '/assets'
     | '/audio'
+    | '/donations'
     | '/overlays'
   id:
     | '__root__'
@@ -140,10 +184,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
+    | '/donate/$creatorId'
+    | '/donations/history'
+    | '/donations/settings'
     | '/overlays/$id'
     | '/alerts/'
     | '/assets/'
     | '/audio/'
+    | '/donations/'
     | '/overlays/'
   fileRoutesById: FileRoutesById
 }
@@ -153,10 +201,14 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   AlertsIdRoute: typeof AlertsIdRoute
   AlertsPresetsRoute: typeof AlertsPresetsRoute
+  DonateCreatorIdRoute: typeof DonateCreatorIdRoute
+  DonationsHistoryRoute: typeof DonationsHistoryRoute
+  DonationsSettingsRoute: typeof DonationsSettingsRoute
   OverlaysIdRoute: typeof OverlaysIdRoute
   AlertsIndexRoute: typeof AlertsIndexRoute
   AssetsIndexRoute: typeof AssetsIndexRoute
   AudioIndexRoute: typeof AudioIndexRoute
+  DonationsIndexRoute: typeof DonationsIndexRoute
   OverlaysIndexRoute: typeof OverlaysIndexRoute
 }
 
@@ -218,6 +270,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AudioIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/donate/$creatorId': {
+      id: '/donate/$creatorId'
+      path: '/donate/$creatorId'
+      fullPath: '/donate/$creatorId'
+      preLoaderRoute: typeof DonateCreatorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/donations/': {
+      id: '/donations/'
+      path: '/donations'
+      fullPath: '/donations/'
+      preLoaderRoute: typeof DonationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/donations/history': {
+      id: '/donations/history'
+      path: '/donations/history'
+      fullPath: '/donations/history'
+      preLoaderRoute: typeof DonationsHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/donations/settings': {
+      id: '/donations/settings'
+      path: '/donations/settings'
+      fullPath: '/donations/settings'
+      preLoaderRoute: typeof DonationsSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/overlays/': {
       id: '/overlays/'
       path: '/overlays'
@@ -241,10 +321,14 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   AlertsIdRoute: AlertsIdRoute,
   AlertsPresetsRoute: AlertsPresetsRoute,
+  DonateCreatorIdRoute: DonateCreatorIdRoute,
+  DonationsHistoryRoute: DonationsHistoryRoute,
+  DonationsSettingsRoute: DonationsSettingsRoute,
   OverlaysIdRoute: OverlaysIdRoute,
   AlertsIndexRoute: AlertsIndexRoute,
   AssetsIndexRoute: AssetsIndexRoute,
   AudioIndexRoute: AudioIndexRoute,
+  DonationsIndexRoute: DonationsIndexRoute,
   OverlaysIndexRoute: OverlaysIndexRoute,
 }
 export const routeTree = rootRouteImport

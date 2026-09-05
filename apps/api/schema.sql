@@ -88,3 +88,44 @@ CREATE TABLE alert_triggers (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(creator_id, source, event_type)
 );
+
+CREATE TABLE donations (
+  id TEXT PRIMARY KEY,
+  creator_id TEXT NOT NULL,
+  
+  donor_name TEXT,
+  message TEXT,
+  
+  amount INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'VND',
+  
+  payment_provider TEXT NOT NULL,
+  payment_reference TEXT NOT NULL,
+  provider_transaction_id TEXT,
+  
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  paid_at DATETIME,
+  expires_at DATETIME,
+  
+  UNIQUE(payment_provider, payment_reference),
+  UNIQUE(payment_provider, provider_transaction_id)
+);
+
+CREATE TABLE creator_donation_settings (
+  creator_id TEXT PRIMARY KEY,
+  enabled BOOLEAN NOT NULL DEFAULT 0,
+  min_amount INTEGER NOT NULL DEFAULT 10000,
+  preset_amounts TEXT NOT NULL DEFAULT '[20000, 50000, 100000, 200000]',
+  allow_message BOOLEAN NOT NULL DEFAULT 1,
+  allow_anonymous BOOLEAN NOT NULL DEFAULT 1,
+  
+  payment_provider TEXT,
+  payment_bank TEXT,
+  payment_account_number TEXT,
+  payment_account_name TEXT,
+  
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
