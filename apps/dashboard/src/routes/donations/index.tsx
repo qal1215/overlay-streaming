@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DollarSign, Clock, List, Settings } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { API_URL } from '../../api/client'
+import { API_URL, apiClient, getAdminAuthHeaders } from '../../api/client'
 
 export const Route = createFileRoute('/donations/')({
   component: DonationsDashboardPage,
@@ -13,20 +13,21 @@ function DonationsDashboardPage() {
   const creatorId = 'qal1215'; // Hardcoded for MVP
 
   useEffect(() => {
-    fetch(`${API_URL}/admin/creator/${creatorId}/donations?limit=3`, {
-      headers: {
-        'Authorization': 'default_admin_secret_dev'
-      }
-    })
-      .then(res => res.json())
-      .then(resData => {
-        setData(resData);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    try {
+      const headers = getAdminAuthHeaders();
+      apiClient.get(`/admin/creator/${creatorId}/donations?limit=3`, headers)
+        .then(resData => {
+          setData(resData);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
   }, []);
 
   if (loading) return <div className="p-8 text-white">Loading...</div>;
@@ -61,7 +62,7 @@ function DonationsDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="p-6 rounded-xl bg-surface/30 border border-white/5 backdrop-blur-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -77,11 +78,11 @@ function DonationsDashboardPage() {
         <div className="p-6 rounded-xl bg-surface/30 border border-white/5 backdrop-blur-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-text-muted font-medium mb-1">Total Donations</p>
-              <h2 className="text-3xl font-bold text-white">{data?.stats?.totalCount || 0}</h2>
+              <p className="text-text-muted font-medium mb-1">This Month</p>
+              <h2 className="text-3xl font-bold text-white">{formatCurrency(data?.stats?.monthAmount || 0)}</h2>
             </div>
             <div className="p-3 bg-purple-500/20 text-purple-400 rounded-lg">
-              <List size={24} />
+              <Clock size={24} />
             </div>
           </div>
         </div>
@@ -89,11 +90,23 @@ function DonationsDashboardPage() {
         <div className="p-6 rounded-xl bg-surface/30 border border-white/5 backdrop-blur-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-text-muted font-medium mb-1">This Month</p>
-              <h2 className="text-3xl font-bold text-white">{formatCurrency(data?.stats?.totalAmount || 0)}</h2>
+              <p className="text-text-muted font-medium mb-1">Today</p>
+              <h2 className="text-3xl font-bold text-white">{formatCurrency(data?.stats?.todayAmount || 0)}</h2>
             </div>
             <div className="p-3 bg-green-500/20 text-green-400 rounded-lg">
               <Clock size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 rounded-xl bg-surface/30 border border-white/5 backdrop-blur-sm">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-text-muted font-medium mb-1">Total Donations</p>
+              <h2 className="text-3xl font-bold text-white">{data?.stats?.totalCount || 0}</h2>
+            </div>
+            <div className="p-3 bg-yellow-500/20 text-yellow-400 rounded-lg">
+              <List size={24} />
             </div>
           </div>
         </div>

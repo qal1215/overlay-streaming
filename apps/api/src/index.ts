@@ -94,8 +94,12 @@ app.post("/api/overlay/:id/broadcast", async (c) => {
 
   // Basic authorization boundary for broadcast (should match AdminAccessMiddleware)
   const authHeader = c.req.header("Authorization") || c.req.header("X-Admin-Secret");
-  const adminSecret = c.env.ADMIN_SECRET || "default_admin_secret";
+  const adminSecret = c.env.ADMIN_SECRET;
   
+  if (!adminSecret) {
+    return c.json({ error: "ADMIN_SECRET is not configured" }, 500);
+  }
+
   if (authHeader !== adminSecret && authHeader !== `Bearer ${adminSecret}`) {
     return c.json({ error: "Unauthorized broadcast access" }, 401);
   }

@@ -20,8 +20,11 @@ donationsRouter.get("/creators/:creatorId/donation-page", async (c) => {
 
   return c.json({
     creator: {
+      id: creatorId,
       username: creatorId,
       displayName: creatorId,
+      avatarUrl: null,
+      bio: null,
     },
     donation: {
       enabled: Boolean(row.enabled),
@@ -120,12 +123,36 @@ donationsRouter.get("/donations/:id", async (c) => {
     return c.json({ error: "Donation not found" }, 404);
   }
 
+  let paymentInstructions;
+  if (donation.status === 'PENDING') {
+    const settingsRow = await c.env.DB.prepare(
+      "SELECT payment_bank, payment_account_number, payment_account_name FROM creator_donation_settings WHERE creator_id = ?"
+    ).bind(donation.creator_id).first<any>();
+
+    if (settingsRow && settingsRow.payment_bank && settingsRow.payment_account_number) {
+      const paymentProvider = new SePayProvider();
+      const paymentIntent = await paymentProvider.createPaymentIntent({
+        donationId: donation.id,
+        amount: donation.amount,
+        currency: donation.currency,
+        reference: donation.paymentReference,
+        paymentAccount: {
+          bank: settingsRow.payment_bank,
+          accountNumber: settingsRow.payment_account_number,
+          accountName: settingsRow.payment_account_name
+        }
+      });
+      paymentInstructions = paymentIntent.instructions;
+    }
+  }
+
   // Only return necessary public info for polling
   return c.json({
     id: donation.id,
     amount: donation.amount,
     currency: donation.currency,
     status: donation.status,
+    ...(paymentInstructions ? { paymentInstructions } : {})
   });
 });
 

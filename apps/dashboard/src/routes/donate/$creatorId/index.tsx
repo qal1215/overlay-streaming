@@ -1,14 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { API_URL } from '../../api/client'
+import { API_URL } from '../../../api/client'
 import { Heart, Loader2, Copy, CheckCircle2, AlertCircle } from 'lucide-react'
 
-export const Route = createFileRoute('/donate/$creatorId')({
+export const Route = createFileRoute('/donate/$creatorId/')({
   component: PublicDonationPage,
 })
 
 function PublicDonationPage() {
   const { creatorId } = Route.useParams()
+  const navigate = Route.useNavigate()
   const [pageInfo, setPageInfo] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -16,9 +17,6 @@ function PublicDonationPage() {
   const [amount, setAmount] = useState<number>(0)
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
-  
-  const [payment, setPayment] = useState<any>(null)
-  const [donationStatus, setDonationStatus] = useState<string>('IDLE') // IDLE, PENDING, PAID, EXPIRED
   
   useEffect(() => {
     fetch(`${API_URL}/public/creators/${creatorId}/donation-page`)
@@ -32,38 +30,7 @@ function PublicDonationPage() {
       .finally(() => setLoading(false))
   }, [creatorId])
 
-  useEffect(() => {
-    if (donationStatus !== 'PENDING' || !payment) return;
-    
-    // Polling logic
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${API_URL}/public/donations/${payment.id}`);
-        const data = await res.json();
-        
-        if (data.status === 'PAID') {
-          setDonationStatus('PAID');
-          clearInterval(interval);
-        } else if (data.status === 'EXPIRED') {
-          setDonationStatus('EXPIRED');
-          clearInterval(interval);
-        }
-      } catch (e) {
-        console.error("Polling error", e);
-      }
-    }, 3000); // Poll every 3 seconds
-    
-    // Stop polling after 30 minutes client-side max
-    const timeout = setTimeout(() => {
-      clearInterval(interval);
-      if (donationStatus === 'PENDING') setDonationStatus('EXPIRED');
-    }, 30 * 60 * 1000);
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [donationStatus, payment]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,8 +48,8 @@ function PublicDonationPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       
-      setPayment(data);
-      setDonationStatus('PENDING');
+      // Redirect to the new payment polling route
+      navigate({ to: `/donate/$creatorId/payment/$donationId`, params: { creatorId, donationId: data.id } });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -93,108 +60,6 @@ function PublicDonationPage() {
   if (loading && !pageInfo) return <div className="min-h-screen bg-background flex items-center justify-center text-white"><Loader2 className="animate-spin text-blue-500 w-12 h-12" /></div>
   
   if (error && !pageInfo) return <div className="min-h-screen bg-background flex items-center justify-center text-red-500">{error}</div>
-
-  if (donationStatus === 'PAID') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-surface/80 border border-green-500/30 rounded-2xl p-8 backdrop-blur-xl text-center space-y-6">
-          <div className="mx-auto w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center border border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-            <CheckCircle2 size={40} className="text-green-400" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Donation Sent!</h1>
-            <p className="text-text-muted">Thank you for supporting {pageInfo.creator.displayName}</p>
-          </div>
-          <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400">
-            {amount.toLocaleString('vi-VN')} ₫
-          </div>
-          <button 
-            onClick={() => { setDonationStatus('IDLE'); setPayment(null); setAmount(pageInfo.donation.minAmount); setName(''); setMessage(''); }}
-            className="w-full py-4 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-all mt-4"
-          >
-            Donate Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (donationStatus === 'EXPIRED') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-surface/80 border border-red-500/30 rounded-2xl p-8 backdrop-blur-xl text-center space-y-6">
-          <div className="mx-auto w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
-            <AlertCircle size={40} className="text-red-400" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Payment Expired</h1>
-            <p className="text-text-muted">This donation request has timed out.</p>
-          </div>
-          <button 
-            onClick={() => { setDonationStatus('IDLE'); setPayment(null); }}
-            className="w-full py-4 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-all mt-4"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (donationStatus === 'PENDING' && payment) {
-    return (
-      <div className="min-h-screen bg-background py-12 px-4">
-        <div className="max-w-md mx-auto relative z-10">
-          <div className="bg-surface/80 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-            <div className="p-6 text-center border-b border-white/10">
-              <h2 className="text-2xl font-bold text-white">Complete Payment</h2>
-              <p className="text-text-muted mt-1 text-sm">Scan with your banking app</p>
-            </div>
-            
-            <div className="p-8 flex justify-center bg-white">
-              <img 
-                src={payment.payment.qrUrl} 
-                alt="VietQR Code" 
-                className="w-64 h-64 object-contain"
-              />
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-text-muted">Amount</span>
-                <span className="text-white font-bold text-lg">{payment.amount.toLocaleString('vi-VN')} ₫</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-text-muted">Bank</span>
-                <span className="text-white font-medium">{payment.payment.bank}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-text-muted">Account</span>
-                <div className="text-right">
-                  <div className="text-white font-medium">{payment.payment.accountNumber}</div>
-                  <div className="text-xs text-text-muted uppercase">{payment.payment.accountName}</div>
-                </div>
-              </div>
-              <div className="flex flex-col py-2 border-b border-white/5">
-                <span className="text-text-muted mb-1 text-sm">Transfer Description (Important)</span>
-                <div className="flex items-center justify-between bg-black/30 rounded-lg p-3 border border-white/5">
-                  <span className="text-white font-mono text-lg font-bold tracking-wider">{payment.payment.content}</span>
-                  <button className="text-blue-400 hover:text-blue-300 transition-colors p-2" onClick={() => navigator.clipboard.writeText(payment.payment.content)}>
-                    <Copy size={18} />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex items-center justify-center space-x-3 text-blue-400 bg-blue-500/10 py-3 rounded-lg border border-blue-500/20">
-                <Loader2 size={18} className="animate-spin" />
-                <span className="font-medium">Waiting for payment...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // IDLE State - Donation Form
   return (

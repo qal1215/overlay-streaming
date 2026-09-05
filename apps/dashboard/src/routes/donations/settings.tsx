@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Save, BellRing, Copy, Key, Check } from 'lucide-react'
-import { API_URL } from '../../api/client'
+import { API_URL, apiClient, getAdminAuthHeaders } from '../../api/client'
 
 export const Route = createFileRoute('/donations/settings')({
   component: DonationSettingsPage,
@@ -27,20 +27,21 @@ function DonationSettingsPage() {
   const creatorId = 'qal1215'; // Hardcoded for dashboard MVP, usually from auth context
 
   useEffect(() => {
-    fetch(`${API_URL}/admin/creator/${creatorId}/donation-settings`, {
-      headers: {
-        'Authorization': 'default_admin_secret_dev'
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setSettings(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error(err)
-        setLoading(false)
-      })
+    try {
+      const headers = getAdminAuthHeaders();
+      apiClient.get(`/admin/creator/${creatorId}/donation-settings`, headers)
+        .then(data => {
+          setSettings(data)
+          setLoading(false)
+        })
+        .catch(err => {
+          console.error(err)
+          setLoading(false)
+        })
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
   }, [])
 
   const handleTestAlert = async () => {
@@ -75,18 +76,12 @@ function DonationSettingsPage() {
     // In a real app, we'd grab values from controlled inputs.
     // For MVP, we assume the state is already updated via onChange.
     try {
-      await fetch(`${API_URL}/admin/creator/${creatorId}/donation-settings`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'default_admin_secret_dev'
-        },
-        body: JSON.stringify({
-          creatorId,
-          donationSettings: settings.donationSettings,
-          paymentAccount: settings.paymentAccount
-        })
-      });
+      const headers = getAdminAuthHeaders();
+      await apiClient.patch(`/admin/creator/${creatorId}/donation-settings`, {
+        creatorId,
+        donationSettings: settings.donationSettings,
+        paymentAccount: settings.paymentAccount
+      }, headers);
       alert('Saved successfully!');
     } catch (_e) {
       alert('Failed to save');
@@ -99,13 +94,8 @@ function DonationSettingsPage() {
     if (!confirm('This will replace your current secret. Are you sure?')) return;
     
     try {
-      const res = await fetch(`${API_URL}/admin/creator/${creatorId}/donation-settings/generate-sepay-secret`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'default_admin_secret_dev'
-        }
-      });
-      const data = await res.json();
+      const headers = getAdminAuthHeaders();
+      const data: any = await apiClient.post(`/admin/creator/${creatorId}/donation-settings/generate-sepay-secret`, {}, headers);
       if (data.secret) {
         setGeneratedSecret(data.secret);
         setSettings({ ...settings, sepayWebhookConfigured: true });

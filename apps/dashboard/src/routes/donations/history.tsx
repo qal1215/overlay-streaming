@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { API_URL } from '../../api/client'
+import { API_URL, apiClient, getAdminAuthHeaders } from '../../api/client'
 
 export const Route = createFileRoute('/donations/history')({
   component: DonationHistoryPage,
@@ -16,20 +16,21 @@ function DonationHistoryPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_URL}/admin/creator/${creatorId}/donations?status=${statusFilter}&limit=100`, {
-      headers: {
-        'Authorization': 'default_admin_secret_dev'
-      }
-    })
-      .then(res => res.json())
-      .then(resData => {
-        setData(resData);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    try {
+      const headers = getAdminAuthHeaders();
+      apiClient.get(`/admin/creator/${creatorId}/donations?status=${statusFilter}&limit=100`, headers)
+        .then(resData => {
+          setData(resData);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
   }, [statusFilter]);
 
   const formatCurrency = (amount: number) => {

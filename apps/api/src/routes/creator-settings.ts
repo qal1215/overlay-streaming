@@ -213,13 +213,17 @@ creatorSettingsRouter.get("/donations", async (c) => {
   
   const { results } = await c.env.DB.prepare(query).bind(...params).all();
   
-  // Also get some summary stats
+  // Also get some summary stats using Vietnam time (UTC+7)
   const statsQuery = await c.env.DB.prepare(`
     SELECT 
       COUNT(*) as total_count,
-      SUM(CASE WHEN status = 'PAID' THEN amount ELSE 0 END) as total_amount
+      SUM(amount) as total_amount,
+      SUM(CASE WHEN date(datetime(paid_at, '+7 hours')) = date(datetime('now', '+7 hours')) THEN 1 ELSE 0 END) as today_count,
+      SUM(CASE WHEN date(datetime(paid_at, '+7 hours')) = date(datetime('now', '+7 hours')) THEN amount ELSE 0 END) as today_amount,
+      SUM(CASE WHEN strftime('%Y-%m', datetime(paid_at, '+7 hours')) = strftime('%Y-%m', datetime('now', '+7 hours')) THEN 1 ELSE 0 END) as month_count,
+      SUM(CASE WHEN strftime('%Y-%m', datetime(paid_at, '+7 hours')) = strftime('%Y-%m', datetime('now', '+7 hours')) THEN amount ELSE 0 END) as month_amount
     FROM donations 
-    WHERE creator_id = ?
+    WHERE creator_id = ? AND status = 'PAID'
   `).bind(creatorId).first<any>();
 
   return c.json({
@@ -227,6 +231,10 @@ creatorSettingsRouter.get("/donations", async (c) => {
     stats: {
       totalCount: statsQuery?.total_count || 0,
       totalAmount: statsQuery?.total_amount || 0,
+      todayCount: statsQuery?.today_count || 0,
+      todayAmount: statsQuery?.today_amount || 0,
+      monthCount: statsQuery?.month_count || 0,
+      monthAmount: statsQuery?.month_amount || 0,
     }
   });
 });
