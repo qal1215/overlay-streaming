@@ -7,7 +7,10 @@ const creatorSettingsRouter = new Hono<{ Bindings: Bindings }>();
 
 // Helper to map DB row to schema
 function mapDbRowToSettings(row: any, creatorId: string, publicApiUrl: string | undefined) {
-  const baseUrl = publicApiUrl || "https://api.overlay.local";
+  const baseUrl = publicApiUrl;
+  if (!baseUrl) {
+    throw new Error("PUBLIC_API_URL is not configured");
+  }
   const sepayWebhookUrl = `${baseUrl}/api/webhooks/sepay/${creatorId}`;
   return {
     creatorId,
@@ -41,7 +44,10 @@ creatorSettingsRouter.get("/donation-settings", async (c) => {
     // Return default settings if none exist yet
     const defaultDonation = DonationSettingsSchema.parse({});
     const defaultPayment = PaymentAccountSchema.parse({});
-    const baseUrl = c.env.PUBLIC_API_URL || "https://api.overlay.local";
+    const baseUrl = c.env.PUBLIC_API_URL;
+    if (!baseUrl) {
+      throw new Error("PUBLIC_API_URL is not configured");
+    }
     return c.json({
       creatorId,
       donationSettings: defaultDonation,
@@ -184,6 +190,45 @@ creatorSettingsRouter.post("/donation-settings/generate-sepay-secret", async (c)
   } catch (e: any) {
     return c.json({ error: e.message || "Failed to generate and save secret" }, 500);
   }
+});
+
+// Get Creator Donations History
+creatorSettingsRouter.get("/donations", async (c) => {
+  const creatorId = c.req.param("id")!;
+  const url = new URL(c.req.url);
+  const status = url.searchParams.get("status") || "All";
+  const limit = parseInt(url.searchParams.get("limit") || "50");
+  const offset = parseInt(url.searchParams.get("offset") || "0");
+  
+  let query = "SELECT d.*, p.status as processed_status, p.processed_at as alert_processed_at FROM donations d LEFT JOIN processed_events p ON d.payment_reference = p.event_id AND p.source = d.payment_provider WHERE d.creator_id = ?";
+  const params: any[] = [creatorId];
+  
+  if (status !== "All") {
+    query += " AND d.status = ?";
+    params.push(status.toUpperCase());
+  }
+  
+  query += " ORDER BY d.created_at DESC LIMIT ? OFFSET ?";
+  params.push(limit, offset);
+  
+  const { results } = await c.env.DB.prepare(query).bind(...params).all();
+  
+  // Also get some summary stats
+  const statsQuery = await c.env.DB.prepare(`
+    SELECT 
+      COUNT(*) as total_count,
+      SUM(CASE WHEN status = 'PAID' THEN amount ELSE 0 END) as total_amount
+    FROM donations 
+    WHERE creator_id = ?
+  `).bind(creatorId).first<any>();
+
+  return c.json({
+    donations: results,
+    stats: {
+      totalCount: statsQuery?.total_count || 0,
+      totalAmount: statsQuery?.total_amount || 0,
+    }
+  });
 });
 
 export default creatorSettingsRouter;

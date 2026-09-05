@@ -1,11 +1,40 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DollarSign, Clock, List, Settings } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { API_URL } from '../../api/client'
 
 export const Route = createFileRoute('/donations/')({
   component: DonationsDashboardPage,
 })
 
 function DonationsDashboardPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const creatorId = 'qal1215'; // Hardcoded for MVP
+
+  useEffect(() => {
+    fetch(`${API_URL}/admin/creator/${creatorId}/donations?limit=3`, {
+      headers: {
+        'Authorization': 'default_admin_secret_dev'
+      }
+    })
+      .then(res => res.json())
+      .then(resData => {
+        setData(resData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="p-8 text-white">Loading...</div>;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
   return (
     <div className="p-8 h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-8">
@@ -37,7 +66,7 @@ function DonationsDashboardPage() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-text-muted font-medium mb-1">Total Received</p>
-              <h2 className="text-3xl font-bold text-white">12,450,000 ₫</h2>
+              <h2 className="text-3xl font-bold text-white">{formatCurrency(data?.stats?.totalAmount || 0)}</h2>
             </div>
             <div className="p-3 bg-blue-500/20 text-blue-400 rounded-lg">
               <DollarSign size={24} />
@@ -49,7 +78,7 @@ function DonationsDashboardPage() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-text-muted font-medium mb-1">Total Donations</p>
-              <h2 className="text-3xl font-bold text-white">86</h2>
+              <h2 className="text-3xl font-bold text-white">{data?.stats?.totalCount || 0}</h2>
             </div>
             <div className="p-3 bg-purple-500/20 text-purple-400 rounded-lg">
               <List size={24} />
@@ -61,7 +90,7 @@ function DonationsDashboardPage() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-text-muted font-medium mb-1">This Month</p>
-              <h2 className="text-3xl font-bold text-white">3,250,000 ₫</h2>
+              <h2 className="text-3xl font-bold text-white">{formatCurrency(data?.stats?.totalAmount || 0)}</h2>
             </div>
             <div className="p-3 bg-green-500/20 text-green-400 rounded-lg">
               <Clock size={24} />
@@ -89,24 +118,27 @@ function DonationsDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              <tr className="hover:bg-white/5 transition-colors">
-                <td className="p-4 text-white font-medium">John</td>
-                <td className="p-4 text-text-muted">GG bro</td>
-                <td className="p-4 text-white font-medium">100,000 ₫</td>
-                <td className="p-4"><span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-400">PAID</span></td>
-              </tr>
-              <tr className="hover:bg-white/5 transition-colors">
-                <td className="p-4 text-white font-medium">Anonymous</td>
-                <td className="p-4 text-text-muted">Love the stream</td>
-                <td className="p-4 text-white font-medium">50,000 ₫</td>
-                <td className="p-4"><span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-400">PAID</span></td>
-              </tr>
-              <tr className="hover:bg-white/5 transition-colors">
-                <td className="p-4 text-white font-medium">Mike</td>
-                <td className="p-4 text-text-muted">Keep going</td>
-                <td className="p-4 text-white font-medium">200,000 ₫</td>
-                <td className="p-4"><span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-400">PAID</span></td>
-              </tr>
+              {data?.donations?.map((d: any) => (
+                <tr key={d.id} className="hover:bg-white/5 transition-colors">
+                  <td className="p-4 text-white font-medium">{d.donor_name || 'Anonymous'}</td>
+                  <td className="p-4 text-text-muted">{d.message || '-'}</td>
+                  <td className="p-4 text-white font-medium">{formatCurrency(d.amount)}</td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      d.status === 'PAID' ? 'bg-green-500/20 text-green-400' :
+                      d.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    }`}>
+                      {d.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {(!data?.donations || data.donations.length === 0) && (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-text-muted">No recent donations.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

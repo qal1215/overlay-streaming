@@ -74,6 +74,7 @@ CREATE TABLE processed_events (
   status TEXT NOT NULL DEFAULT 'RECEIVED',
   attempts INTEGER NOT NULL DEFAULT 0,
   received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  processing_started_at DATETIME,
   processed_at DATETIME,
   last_error TEXT,
   PRIMARY KEY (creator_id, source, event_id)

@@ -83,9 +83,17 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
       // Ignore unique constraint failures
     }
 
+    // Recover stale PROCESSING events (>5 min)
+    await c.env.DB.prepare(
+      `UPDATE processed_events
+       SET status = 'FAILED', last_error = 'Webhook processing timeout', processing_started_at = NULL
+       WHERE creator_id = ? AND source = ? AND event_id = ? AND status = 'PROCESSING' 
+       AND processing_started_at < datetime('now', '-5 minutes')`
+    ).bind(creatorId, source, eventId).run();
+
     // Attempt to atomically claim for processing
     const claimResult = await c.env.DB.prepare(
-      "UPDATE processed_events SET status = 'PROCESSING', attempts = attempts + 1, processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ? AND status IN ('RECEIVED', 'FAILED')"
+      "UPDATE processed_events SET status = 'PROCESSING', attempts = attempts + 1, processing_started_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ? AND status IN ('RECEIVED', 'FAILED')"
     ).bind(creatorId, source, eventId).run();
 
     if (claimResult.meta.changes !== 1) {
@@ -103,7 +111,7 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
 
     let alertEvent;
     try {
-      // 5. DonationService processing
+      // 5. DonationService processing (Financial State Transition)
       const donationService = new DonationService(c.env.DB);
       const donation = await donationService.getDonationByReference(paymentEvent.referenceCode);
       
@@ -117,8 +125,9 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
 
       alertEvent = await donationService.processPaymentEvent(paymentEvent);
     } catch (e: any) {
+      // Failed during payment processing
       await c.env.DB.prepare(
-        "UPDATE processed_events SET status = 'FAILED', last_error = ?, processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ?"
+        "UPDATE processed_events SET status = 'FAILED', last_error = ?, processing_started_at = NULL WHERE creator_id = ? AND source = ? AND event_id = ?"
       ).bind(e.message, creatorId, source, eventId).run();
       console.error("SePay webhook processing error:", e);
       return c.json({ error: "Payment processing failed" }, 400);
@@ -146,17 +155,20 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
         await alertService.dispatchAlert(creatorId, resolvedEvent);
       }
 
+      // Successful E2E
       await c.env.DB.prepare(
         "UPDATE processed_events SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ?"
       ).bind(creatorId, source, eventId).run();
       
       return c.json({ success: true });
     } catch (e: any) {
+      // Alert failed, but payment succeeded. Do NOT rollback payment.
+      // Mark event as FAILED so it can be retried (the payment processing step is idempotent).
       await c.env.DB.prepare(
-        "UPDATE processed_events SET status = 'FAILED', last_error = ?, processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ?"
-      ).bind(e.message, creatorId, source, eventId).run();
+        "UPDATE processed_events SET status = 'FAILED', last_error = ?, processing_started_at = NULL WHERE creator_id = ? AND source = ? AND event_id = ?"
+      ).bind("Alert dispatch failed: " + e.message, creatorId, source, eventId).run();
       console.error("SePay webhook alert dispatch error:", e);
-      // Return 500 so provider retries
+      // Return 500 so provider retries the webhook
       return c.json({ error: "Alert dispatch failed" }, 500);
     }
   } catch (e: any) {
@@ -169,10 +181,13 @@ webhooksRouter.post("/:creatorId", async (c) => {
   const creatorId = c.req.param("creatorId");
   
   // 1. Simple Authentication
-  // Use ADMIN_SECRET fallback since WEBHOOK_SECRET is removed from global env
   const authHeader = c.req.header("X-Webhook-Secret") || c.req.header("Authorization");
-  const expectedSecret = c.env.ADMIN_SECRET || "default_secret";
+  const expectedSecret = c.env.ADMIN_SECRET;
   
+  if (!expectedSecret) {
+    return c.json({ error: "Webhook authentication is not configured on the server" }, 500);
+  }
+
   let isAuthed = false;
   if (authHeader === expectedSecret || authHeader === `Bearer ${expectedSecret}`) {
     isAuthed = true;
