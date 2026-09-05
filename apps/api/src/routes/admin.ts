@@ -13,6 +13,29 @@ export type Bindings = {
 
 const adminRouter = new Hono<{ Bindings: Bindings }>();
 
+// Admin Access Context & Ownership boundary
+async function authorizeCreatorAccess(c: any, creatorId: string): Promise<boolean> {
+  const authHeader = c.req.header("Authorization") || c.req.header("X-Admin-Secret");
+  const adminSecret = c.env.ADMIN_SECRET || c.env.WEBHOOK_SECRET || "default_admin_secret"; // Fallback for MVP if not set
+
+  // In the future (Phase 15/16), this will verify JWT/session identity and check if the user owns creatorId.
+  // For now, we use a simple shared secret to protect the admin routes from arbitrary public access.
+  if (authHeader === adminSecret || authHeader === `Bearer ${adminSecret}`) {
+    return true;
+  }
+  return false;
+}
+
+// Middleware to protect admin routes
+adminRouter.use("/creator/:id/*", async (c, next) => {
+  const creatorId = c.req.param("id");
+  const isAuthorized = await authorizeCreatorAccess(c, creatorId);
+  if (!isAuthorized) {
+    return c.json({ error: "Unauthorized access to creator admin resources" }, 401);
+  }
+  await next();
+});
+
 // Get the creator's overlay configuration
 adminRouter.get("/creator/:id/config", async (c) => {
   const creatorId = c.req.param("id");

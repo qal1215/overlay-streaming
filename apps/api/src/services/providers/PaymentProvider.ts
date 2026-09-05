@@ -3,6 +3,11 @@ export interface CreatePaymentInput {
   amount: number;
   currency: string;
   reference: string;
+  paymentAccount: {
+    bank: string;
+    accountNumber: string;
+    accountName?: string;
+  };
 }
 
 export interface PaymentIntent {

@@ -13,9 +13,9 @@ export const DonationStatusSchema = z.enum([
 export type DonationStatus = z.infer<typeof DonationStatusSchema>;
 
 export const CreateDonationRequestSchema = z.object({
-  amount: z.number().int().positive(),
-  donorName: z.string().optional(),
-  message: z.string().optional(),
+  amount: z.number().int().positive().max(1000000000), // 1 Billion VND max
+  donorName: z.string().trim().max(100).optional(),
+  message: z.string().trim().max(500).optional(),
 });
 
 export type CreateDonationRequest = z.infer<typeof CreateDonationRequestSchema>;

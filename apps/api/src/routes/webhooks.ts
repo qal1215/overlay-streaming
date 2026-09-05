@@ -12,14 +12,19 @@ const webhooksRouter = new Hono<{ Bindings: Bindings }>();
 webhooksRouter.post("/sepay", async (c) => {
   const adapter = new SePayAdapter(c.env.WEBHOOK_SECRET || "default_secret");
   
-  const signature = c.req.header("Authorization")?.replace("Apikey ", "") || "";
+  // 1. Signature validation
+  const signature = c.req.header("X-SePay-Signature") || "";
+  const timestamp = c.req.header("X-SePay-Timestamp") || "";
   const rawBody = await c.req.text();
 
-  // 1. Signature validation
-  // Temporarily bypass strict HMAC if using simple apikey in test, but ideally implement actual validation
-  // if (!await adapter.validateSignature(rawBody, signature)) {
-  //   return c.json({ error: "Invalid signature" }, 401);
-  // }
+  if (!signature || !timestamp) {
+    return c.json({ error: "Missing signature or timestamp headers" }, 401);
+  }
+
+  const isValid = await adapter.validateSignature(rawBody, timestamp, signature);
+  if (!isValid) {
+    return c.json({ error: "Invalid signature or expired timestamp" }, 401);
+  }
 
   let body;
   try {
@@ -29,8 +34,14 @@ webhooksRouter.post("/sepay", async (c) => {
   }
 
   try {
+    const { SePayWebhookPayloadSchema } = await import("@overlay/schema");
+    const payloadResult = SePayWebhookPayloadSchema.safeParse(body);
+    if (!payloadResult.success) {
+      return c.json({ error: "Malformed payload", details: payloadResult.error }, 400);
+    }
+
     // 2. Normalization
-    const paymentEvent = adapter.normalize(body);
+    const paymentEvent = adapter.normalize(payloadResult.data);
 
     // 3. Webhook Idempotency (processed_events)
     // Extract creatorId from the referenceCode (DONATE-QAL-8F32KD -> QAL)

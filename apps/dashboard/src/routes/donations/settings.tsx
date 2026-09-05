@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Save, BellRing, CheckCircle2 } from 'lucide-react'
+import { Save, BellRing } from 'lucide-react'
 import { API_URL } from '../../api/client'
 
 export const Route = createFileRoute('/donations/settings')({

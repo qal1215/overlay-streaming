@@ -33,7 +33,7 @@ export class DonationService {
       return null;
     }
 
-    // 5. Atomic state change
+    // 5. Atomic state change (enforce expires_at)
     const updateResult = await this.db.prepare(`
       UPDATE donations
       SET
@@ -42,11 +42,12 @@ export class DonationService {
         paid_at = CURRENT_TIMESTAMP
       WHERE id = ?
         AND status = 'PENDING'
+        AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
     `).bind(event.transactionId, donation.id).run();
 
     // 6. Check affected rows (atomic transition protection)
     if (updateResult.meta.changes !== 1) {
-      console.log(`[DonationService] Donation ${donation.id} already paid or not PENDING.`);
+      console.log(`[DonationService] Donation ${donation.id} already paid, not PENDING, or expired.`);
       // Return null so we don't emit a duplicate alert
       return null;
     }

@@ -18,14 +18,21 @@ async function runTests() {
       const encoder = new TextEncoder();
       const keyData = encoder.encode("secret123");
       const key = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-      const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(payloadStr));
+      
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const payloadToSign = `${timestamp}.${payloadStr}`;
+      
+      const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(payloadToSign));
       const signatureHex = Array.from(new Uint8Array(signatureBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
       
-      const isValid = await adapter.validateSignature(payloadStr, signatureHex);
+      const isValid = await adapter.validateSignature(payloadStr, timestamp, signatureHex);
       assert.ok(isValid, "Signature should be valid");
       
-      const isInvalid = await adapter.validateSignature(payloadStr, "wronghex");
+      const isInvalid = await adapter.validateSignature(payloadStr, timestamp, "wronghex");
       assert.ok(!isInvalid, "Wrong signature should be invalid");
+      
+      const isReplay = await adapter.validateSignature(payloadStr, (Math.floor(Date.now() / 1000) - 1000).toString(), signatureHex);
+      assert.ok(!isReplay, "Old timestamp should trigger replay protection");
   }
 
   // 2. Normalization

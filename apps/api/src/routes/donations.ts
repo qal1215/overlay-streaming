@@ -75,14 +75,26 @@ donationsRouter.post("/creators/:creatorId/donations", async (c) => {
   const donationService = new DonationService(c.env.DB);
   const donation = await donationService.createDonation(creatorId, amount, donorName, message);
   
+  const bankId = settingsRow.payment_bank;
+  const accountNo = settingsRow.payment_account_number;
+  
+  if (!bankId || !accountNo) {
+    return c.json({ error: "Payment account is not configured" }, 400);
+  }
+
   const paymentProvider = new SePayProvider();
   
-  // Create payment intent using creator's configured bank details if available
-  const bankId = settingsRow.payment_bank || "970422";
-  const accountNo = settingsRow.payment_account_number || "123456789";
-  
-  // Generate QR string with actual details
-  const qrUrl = `https://qr.sepay.vn/img?acc=${accountNo}&bank=${bankId}&amount=${donation.amount}&des=${donation.paymentReference}`;
+  const paymentIntent = await paymentProvider.createPaymentIntent({
+    donationId: donation.id,
+    amount: donation.amount,
+    currency: donation.currency,
+    reference: donation.paymentReference,
+    paymentAccount: {
+      bank: bankId,
+      accountNumber: accountNo,
+      accountName: settingsRow.payment_account_name
+    }
+  });
 
   return c.json({
     id: donation.id,
@@ -92,12 +104,8 @@ donationsRouter.post("/creators/:creatorId/donations", async (c) => {
     status: donation.status,
     expiresAt: donation.expiresAt,
     payment: {
-      provider: "sepay",
-      qrUrl,
-      bank: bankId,
-      accountNumber: accountNo,
-      accountName: settingsRow.payment_account_name || creatorId,
-      content: donation.paymentReference,
+      provider: paymentIntent.provider,
+      ...paymentIntent.instructions
     }
   });
 });

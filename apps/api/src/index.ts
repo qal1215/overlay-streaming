@@ -90,6 +90,15 @@ app.get("/api/overlay/:overlayId/ws", async (c) => {
 // Broadcast event to overlay
 app.post("/api/overlay/:id/broadcast", async (c) => {
   const creatorId = c.req.param("id");
+
+  // Basic authorization boundary for broadcast (should match AdminAccessMiddleware)
+  const authHeader = c.req.header("Authorization") || c.req.header("X-Admin-Secret");
+  const adminSecret = c.env.ADMIN_SECRET || c.env.WEBHOOK_SECRET || "default_admin_secret";
+  
+  if (authHeader !== adminSecret && authHeader !== `Bearer ${adminSecret}`) {
+    return c.json({ error: "Unauthorized broadcast access" }, 401);
+  }
+
   const id = c.env.OVERLAY_ROOM.idFromName(creatorId);
   const room = c.env.OVERLAY_ROOM.get(id);
   
