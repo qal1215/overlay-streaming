@@ -30,9 +30,9 @@ export default function AnimeAlert({
 
             {/* Main slanted box */}
             <motion.div
-              initial={{ x: -1000, skewX: -15 }}
-              animate={{ x: 0, skewX: -15 }}
-              exit={{ x: 1000, skewX: -15 }}
+              initial={{ x: -1000, transform: 'skewX(-15deg)' }}
+              animate={{ x: 0, transform: 'skewX(-15deg)' }}
+              exit={{ x: 1000, transform: 'skewX(-15deg)' }}
               transition={{ type: "spring", damping: 15, stiffness: 100 }}
               className="relative z-10 flex w-full max-w-4xl bg-red-600 shadow-[20px_20px_0_rgba(0,0,0,0.8)]"
             >
@@ -44,7 +44,7 @@ export default function AnimeAlert({
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 0.2, type: "spring" }}
                     className="flex-shrink-0"
-                    style={{ skewX: 15 }} // un-skew
+                    style={{ transform: 'skewX(15deg)' }} // un-skew
                   >
                     <img
                       src={imageUrl}
@@ -54,7 +54,7 @@ export default function AnimeAlert({
                   </motion.div>
                 )}
 
-                <div className="flex flex-col text-white" style={{ skewX: 15 }}>
+                <div className="flex flex-col text-white" style={{ transform: 'skewX(15deg)' }}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

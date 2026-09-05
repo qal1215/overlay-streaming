@@ -73,26 +73,32 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
     const eventId = paymentEvent.transactionId;
     const source = paymentEvent.provider;
 
-    // 4. Idempotency Check
-    const eventRow = await c.env.DB.prepare(
-      "SELECT status, attempts FROM processed_events WHERE creator_id = ? AND source = ? AND event_id = ?"
-    ).bind(creatorId, source, eventId).first<any>();
+    // 4. Idempotency Check & Atomic Claim
+    try {
+      // Ensure the row exists
+      await c.env.DB.prepare(
+        "INSERT INTO processed_events (event_id, creator_id, source, status, attempts) VALUES (?, ?, ?, 'RECEIVED', 0)"
+      ).bind(eventId, creatorId, source).run();
+    } catch (e: any) {
+      // Ignore unique constraint failures
+    }
 
-    if (eventRow) {
-      if (eventRow.status === 'COMPLETED') {
+    // Attempt to atomically claim for processing
+    const claimResult = await c.env.DB.prepare(
+      "UPDATE processed_events SET status = 'PROCESSING', attempts = attempts + 1, processed_at = CURRENT_TIMESTAMP WHERE creator_id = ? AND source = ? AND event_id = ? AND status IN ('RECEIVED', 'FAILED')"
+    ).bind(creatorId, source, eventId).run();
+
+    if (claimResult.meta.changes !== 1) {
+      // Could not claim it (already COMPLETED or PROCESSING)
+      const currentStatus = await c.env.DB.prepare(
+        "SELECT status FROM processed_events WHERE creator_id = ? AND source = ? AND event_id = ?"
+      ).bind(creatorId, source, eventId).first<any>();
+
+      if (currentStatus?.status === 'COMPLETED') {
         return c.json({ success: true, message: "Duplicate event already completed" }, 200);
-      }
-      if (eventRow.status === 'PROCESSING') {
+      } else {
         return c.json({ success: true, message: "Event is currently processing" }, 200);
       }
-      // FAILED or RECEIVED, we will increment attempt
-      await c.env.DB.prepare(
-        "UPDATE processed_events SET status = 'PROCESSING', attempts = attempts + 1 WHERE creator_id = ? AND source = ? AND event_id = ?"
-      ).bind(creatorId, source, eventId).run();
-    } else {
-      await c.env.DB.prepare(
-        "INSERT INTO processed_events (event_id, creator_id, source, status, attempts) VALUES (?, ?, ?, 'PROCESSING', 1)"
-      ).bind(eventId, creatorId, source).run();
     }
 
     let alertEvent;
