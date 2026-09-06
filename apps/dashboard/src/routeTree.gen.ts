@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ObsRouteImport } from './routes/obs'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AlertsIndexRouteImport } from './routes/alerts/index'
@@ -28,6 +29,11 @@ import { Route as DonateCreatorIdPaymentDonationIdRouteImport } from './routes/d
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ObsRoute = ObsRouteImport.update({
@@ -104,6 +110,7 @@ const DonateCreatorIdPaymentDonationIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/obs': typeof ObsRoute
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/obs': typeof ObsRoute
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/obs': typeof ObsRoute
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/obs'
     | '/settings'
     | '/alerts/$id'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/obs'
     | '/settings'
     | '/alerts/$id'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/obs'
     | '/settings'
     | '/alerts/$id'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   ObsRoute: typeof ObsRoute
   SettingsRoute: typeof SettingsRoute
   AlertsIdRoute: typeof AlertsIdRoute
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/obs': {
@@ -349,6 +369,7 @@ const DonateCreatorIdRouteWithChildren = DonateCreatorIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   ObsRoute: ObsRoute,
   SettingsRoute: SettingsRoute,
   AlertsIdRoute: AlertsIdRoute,

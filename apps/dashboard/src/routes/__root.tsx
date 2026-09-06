@@ -1,11 +1,28 @@
-import { createRootRoute, Link, Outlet } from '@tanstack/react-router'
-import { LayoutDashboard, Layers, Bell, Volume2, Image, Settings, Tv } from 'lucide-react'
+import { createRootRoute, Link, Outlet, Navigate, useRouterState } from '@tanstack/react-router'
+import { LayoutDashboard, Layers, Bell, Volume2, Image, Settings, Tv, LogOut } from 'lucide-react'
+import { useDevAdminAuth } from '../hooks/useAuth'
 
 export const Route = createRootRoute({
   component: RootComponent,
 })
 
 function RootComponent() {
+  const { isAuthenticated, logout } = useDevAdminAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  if (!isAuthenticated && pathname !== '/login') {
+    return <Navigate to="/login" />;
+  }
+
+  if (pathname === '/login') {
+    return (
+      <div className="flex h-screen bg-background text-text overflow-hidden relative">
+        <div className="absolute top-0 -left-1/4 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background -z-10 pointer-events-none" />
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-background text-text">
       {/* Sidebar */}
@@ -29,6 +46,13 @@ function RootComponent() {
           <div className="px-4 mt-8 space-y-1">
             <div className="text-xs font-semibold text-text-muted mb-2 px-3 uppercase tracking-wider">System</div>
             <NavItem to="/settings" icon={<Settings size={20} />} label="Settings" />
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-red-400 hover:bg-white/5 transition-colors text-left"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Logout</span>
+            </button>
           </div>
         </nav>
       </aside>
