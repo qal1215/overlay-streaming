@@ -13,7 +13,7 @@ import { AlertEngine, alertQueue } from "@overlay/alert-engine";
 import { AudioSetup } from "../../components/AudioSetup";
 import { API_URL } from "../../lib/config";
 
-export const Route = createFileRoute("/overlay/$id")({
+export const Route = createFileRoute("/overlays/$id")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
       runtime: search.runtime as string | undefined,

@@ -18,7 +18,7 @@ async function runTests() {
     gateway: "VietQR",
     transactionDate: "2024-01-01 12:00:00",
     accountNumber: mockAccountNumber,
-    subAccount: null,
+    subAccountCode: null,
     code: null,
     content: "Donation from Alice",
     transferType: "in",

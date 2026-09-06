@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import type { AlertEvent, OverlayRuntimeState } from '@overlay/schema';
+import type { AlertEvent, ResolvedAlertEvent, OverlayRuntimeState } from '@overlay/schema';
 import { OverlayRuntimeMessageSchema } from '@overlay/schema';
 import { API_URL } from '../lib/config';
 
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'error';
 
-export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: AlertEvent) => void) {
+export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: ResolvedAlertEvent) => void) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
   const [runtimeState, setRuntimeState] = useState<OverlayRuntimeState | null>(null);
   
@@ -75,7 +75,7 @@ export function useOverlayConnection(overlayId: string, onAlertEvent?: (event: A
               });
             } else if (parsed.type === 'alert:event') {
               if (onAlertEventRef.current) {
-                onAlertEventRef.current(parsed.event);
+                onAlertEventRef.current(parsed.resolved);
               }
             } else if (parsed.type === 'error') {
               console.error('Overlay error:', parsed.message);

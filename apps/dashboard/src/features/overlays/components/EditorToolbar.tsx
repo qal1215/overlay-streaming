@@ -28,9 +28,7 @@ export function EditorToolbar({
   onTestAlert,
 }: EditorToolbarProps) {
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(
-      `http://localhost:3000/overlays/${overlayId}`,
-    );
+    navigator.clipboard.writeText(`http://localhost:3000/overlay/${overlayId}`);
   };
   return (
     <header className="h-14 border-b border-white/10 bg-surface flex items-center justify-between px-4 z-20 shadow-md">

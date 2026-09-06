@@ -4,6 +4,7 @@ import alertsRouter from "./alerts";
 import audioRouter from "./audio";
 import assetsRouter from "./assets";
 import { AlertService } from "../services/alert-service";
+import { TriggerMapper } from "../services/trigger-mapper";
 export type Bindings = {
   DB: D1Database;
   OVERLAY_ROOM: DurableObjectNamespace;
@@ -110,11 +111,25 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
       name: body.name || "Test Actor",
     },
     donation: {
-      amount: body.amount || "$10.00",
-      currency: body.currency || "USD",
+      amount: String(body.amount || "$10.00"),
+      currency: String(body.currency || "USD"),
     },
     message: body.message || "This is a test alert from the admin dashboard!",
   };
+
+  let finalAlertId = body.presetId || "";
+  if (!finalAlertId) {
+    const triggerMapper = new TriggerMapper(c.env.DB);
+    finalAlertId = await triggerMapper.resolve(creatorId, mockEvent.source, mockEvent.type) || "";
+  }
+  
+  if (!finalAlertId) {
+    // If they haven't configured a trigger mapping yet, just use any alert for the test
+    const firstAlert = await c.env.DB.prepare("SELECT id FROM alerts WHERE creator_id = ? LIMIT 1").bind(creatorId).first<{id: string}>();
+    if (firstAlert) {
+      finalAlertId = firstAlert.id;
+    }
+  }
 
   // The client connects to DO using overlayId, so we must broadcast to the correct overlay
   if (body.overlayId) {
@@ -127,7 +142,7 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
         type: "alert:event",
         resolved: {
           event: mockEvent,
-          alertId: body.presetId || "", // Temporary fallback, but real tests should send presetId
+          alertId: finalAlertId,
         },
       }),
     }));
@@ -136,7 +151,7 @@ adminRouter.post("/creator/:id/test-alert", async (c) => {
     const alertService = new AlertService(c.env.DB, c.env.OVERLAY_ROOM);
     await alertService.dispatchAlert(creatorId, {
       event: mockEvent,
-      alertId: body.presetId || "",
+      alertId: finalAlertId,
     });
   }
 
