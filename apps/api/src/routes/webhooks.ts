@@ -4,23 +4,25 @@ import { AlertService } from "../services/alert-service";
 import { WebhookAdapter } from "../services/adapters/WebhookAdapter";
 import { TriggerMapper } from "../services/trigger-mapper";
 import { ResolvedAlertEvent } from "@overlay/schema";
-import { SePayAdapter } from "../services/adapters/SePayAdapter";
 import { DonationService } from "../services/DonationService";
 import { SecretEncryptionService } from "../services/SecretEncryptionService";
+import { SepayWebhookService } from "../services/sepay/sepay-webhook-service";
 
 const webhooksRouter = new Hono<{ Bindings: Bindings }>();
 
-webhooksRouter.post("/sepay/:creatorId", async (c) => {
-  const creatorId = c.req.param("creatorId");
+webhooksRouter.post("/sepay/:webhookId", async (c) => {
+  const webhookId = c.req.param("webhookId");
 
-  // Load creator settings
+  // Load creator settings via webhookId
   const settingsRow = await c.env.DB.prepare(
-    "SELECT * FROM creator_donation_settings WHERE creator_id = ?"
-  ).bind(creatorId).first<any>();
+    "SELECT * FROM creator_donation_settings WHERE sepay_webhook_id = ?"
+  ).bind(webhookId).first<any>();
 
   if (!settingsRow || !settingsRow.sepay_webhook_secret || !settingsRow.enabled || settingsRow.payment_provider !== 'sepay') {
-    return c.json({ error: "SePay webhook is not configured" }, 404);
+    return c.json({ error: "SePay webhook is not configured or not found" }, 404);
   }
+
+  const creatorId = settingsRow.creator_id;
 
   // Decrypt secret
   let secret = "";
@@ -32,46 +34,27 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
     return c.json({ error: "Internal Configuration Error" }, 500);
   }
 
-  const adapter = new SePayAdapter(secret);
-  
-  // 1. Signature validation
   const signature = c.req.header("X-SePay-Signature") || "";
   const timestamp = c.req.header("X-SePay-Timestamp") || "";
   const rawBody = await c.req.text();
 
-  if (!signature || !timestamp) {
-    return c.json({ error: "Missing signature or timestamp headers" }, 401);
-  }
-
-  const isValid = await adapter.validateSignature(rawBody, timestamp, signature);
-  if (!isValid) {
-    return c.json({ error: "Invalid signature or expired timestamp" }, 401);
-  }
-
-  let body;
+  let donationEvent;
   try {
-    body = JSON.parse(rawBody);
-  } catch (e) {
-    return c.json({ error: "Invalid JSON" }, 400);
+    const webhookService = new SepayWebhookService(secret);
+    donationEvent = await webhookService.processRequest(
+      creatorId,
+      rawBody,
+      timestamp,
+      signature,
+      settingsRow.payment_account_number
+    );
+  } catch (e: any) {
+    console.error("[SePay Webhook] Processing failed:", e.message);
+    return c.json({ error: e.message }, 400);
   }
 
-  try {
-    const { SePayWebhookPayloadSchema } = await import("@overlay/schema");
-    const payloadResult = SePayWebhookPayloadSchema.safeParse(body);
-    if (!payloadResult.success) {
-      console.error("[SePay Webhook] Malformed payload details:", payloadResult.error);
-      return c.json({ error: "Malformed payload" }, 400);
-    }
-
-    // 2. Validate destination account
-    if (payloadResult.data.accountNumber !== settingsRow.payment_account_number) {
-      return c.json({ error: "Destination account mismatch" }, 400);
-    }
-
-    // 3. Normalization
-    const paymentEvent = adapter.normalize(payloadResult.data);
-    const eventId = paymentEvent.transactionId;
-    const source = paymentEvent.provider;
+  const eventId = donationEvent.providerTransactionId;
+  const source = donationEvent.provider;
 
     // 4. Idempotency Check & Atomic Claim
     try {
@@ -113,17 +96,21 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
     try {
       // 5. DonationService processing (Financial State Transition)
       const donationService = new DonationService(c.env.DB);
-      const donation = await donationService.getDonationByReference(paymentEvent.referenceCode);
+      
+      if (!donationEvent.paymentReference) {
+        throw new Error("Missing payment reference in donation event");
+      }
+      const donation = await donationService.getDonationByReference(donationEvent.paymentReference);
       
       if (!donation) {
-        throw new Error(`Donation not found for reference ${paymentEvent.referenceCode}`);
+        throw new Error(`Donation not found for reference ${donationEvent.paymentReference}`);
       }
 
       if (donation.creator_id !== creatorId) {
         throw new Error(`Donation ownership mismatch`);
       }
 
-      alertEvent = await donationService.processPaymentEvent(paymentEvent);
+      alertEvent = await donationService.processPaymentEvent(donationEvent);
     } catch (e: any) {
       // Failed during payment processing
       await c.env.DB.prepare(
@@ -171,10 +158,6 @@ webhooksRouter.post("/sepay/:creatorId", async (c) => {
       // Return 500 so provider retries the webhook
       return c.json({ error: "Alert dispatch failed" }, 500);
     }
-  } catch (e: any) {
-    console.error("SePay webhook error:", e);
-    return c.json({ error: "Internal Server Error" }, 500);
-  }
 });
 
 webhooksRouter.post("/:creatorId", async (c) => {

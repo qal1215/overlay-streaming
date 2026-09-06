@@ -136,6 +136,7 @@ CREATE TABLE creator_donation_settings (
   payment_account_name TEXT,
   
   sepay_webhook_secret TEXT,
+  sepay_webhook_id TEXT UNIQUE,
   
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

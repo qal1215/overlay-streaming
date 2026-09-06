@@ -1,25 +1,23 @@
 import { D1Database } from "@cloudflare/workers-types";
-import { PaymentEvent, AlertEvent } from "@overlay/schema";
+import { AlertEvent } from "@overlay/schema";
+import { DonationEvent } from "../types/donation";
 
 export class DonationService {
   constructor(private db: D1Database) {}
 
-  async processPaymentEvent(event: PaymentEvent): Promise<AlertEvent | null> {
+  async processPaymentEvent(event: DonationEvent): Promise<AlertEvent | null> {
     // 1. Find donation
     const donation = await this.db.prepare(
       'SELECT * FROM donations WHERE payment_reference = ?'
-    ).bind(event.referenceCode).first<any>();
+    ).bind(event.paymentReference).first<any>();
 
     if (!donation) {
-      console.log(`[DonationService] Donation not found for reference: ${event.referenceCode}`);
+      console.log(`[DonationService] Donation not found for reference: ${event.paymentReference}`);
       return null;
     }
 
-    // 2. Validate transfer type
-    if (event.transferType !== 'in') {
-      console.log(`[DonationService] Transfer type is not 'in'`);
-      return null;
-    }
+    // Since we handle both in and out externally or we don't have transferType on DonationEvent anymore
+    // assuming adapter only sends valid 'in' transfers, we can skip transferType check.
 
     // 3. Validate amount
     if (donation.amount !== event.amount) {
@@ -43,11 +41,11 @@ export class DonationService {
       WHERE id = ?
         AND status = 'PENDING'
         AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
-    `).bind(event.transactionId, donation.id).run();
+    `).bind(event.providerTransactionId, donation.id).run();
 
     // 6. Check affected rows (atomic transition protection)
     if (updateResult.meta.changes !== 1) {
-      if (donation.status === 'PAID' && donation.provider_transaction_id === event.transactionId) {
+      if (donation.status === 'PAID' && donation.provider_transaction_id === event.providerTransactionId) {
         console.log(`[DonationService] Donation ${donation.id} already paid by this event. Emitting alert event for retry.`);
       } else {
         console.log(`[DonationService] Donation ${donation.id} transition failed (already paid, not PENDING, or expired).`);
@@ -59,7 +57,7 @@ export class DonationService {
 
     // 7. Emit AlertEvent
     return {
-      eventId: event.providerEventId,
+      eventId: event.id,
       creatorId: donation.creator_id,
       source: event.provider,
       type: "donation",

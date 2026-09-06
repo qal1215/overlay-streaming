@@ -26,19 +26,38 @@ function DonationSettingsPage() {
 
   const creatorId = 'qal1215'; // Hardcoded for dashboard MVP, usually from auth context
 
+  const defaultSettings = {
+    donationSettings: {
+      enabled: false,
+      minAmount: 10000,
+      presetAmounts: [10000, 50000, 100000, 200000, 500000],
+      allowMessage: true,
+      allowAnonymous: true
+    },
+    paymentAccount: {
+      bank: '',
+      accountNumber: '',
+      accountName: ''
+    },
+    sepayWebhookConfigured: false,
+    sepayWebhookUrl: ''
+  };
+
   useEffect(() => {
     try {
       apiClient.get(`/admin/creator/${creatorId}/donation-settings`)
         .then(data => {
-          setSettings(data)
+          setSettings(data || defaultSettings)
           setLoading(false)
         })
         .catch(err => {
           console.error(err)
+          setSettings(defaultSettings)
           setLoading(false)
         })
     } catch (err) {
       console.error(err);
+      setSettings(defaultSettings);
       setLoading(false);
     }
   }, [])
@@ -99,6 +118,20 @@ function DonationSettingsPage() {
       }
     } catch (_e) {
       alert('Failed to generate secret');
+    }
+  }
+
+  const handleRotateWebhookUrl = async () => {
+    if (!confirm('This will immediately invalidate your old webhook URL. Are you sure?')) return;
+    
+    try {
+      const data: any = await apiClient.post(`/admin/creator/${creatorId}/donation-settings/rotate-sepay-webhook-url`, {});
+      if (data.webhookUrl) {
+        setSettings({ ...settings, sepayWebhookUrl: data.webhookUrl });
+        alert('Webhook URL rotated successfully');
+      }
+    } catch (_e) {
+      alert('Failed to rotate webhook URL');
     }
   }
 
@@ -189,10 +222,17 @@ function DonationSettingsPage() {
               <h3 className="text-lg font-bold text-white mb-4">SePay Integration</h3>
               
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Webhook URL</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-text-muted">Webhook URL</label>
+                  {settings.sepayWebhookUrl && (
+                    <button onClick={handleRotateWebhookUrl} type="button" className="text-xs text-blue-400 hover:text-blue-300">
+                      Regenerate
+                    </button>
+                  )}
+                </div>
                 <div className="flex space-x-2">
-                  <input type="text" readOnly value={settings.sepayWebhookUrl || ''} className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white/70 font-mono text-sm" />
-                  <button onClick={() => { navigator.clipboard.writeText(settings.sepayWebhookUrl || ''); setCopiedUrl(true); setTimeout(() => setCopiedUrl(false), 2000); }} className="px-4 py-2 bg-surface border border-white/10 rounded-lg hover:bg-white/5 transition-colors">
+                  <input type="text" readOnly value={settings.sepayWebhookUrl || 'Save settings to generate...'} className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white/70 font-mono text-sm" />
+                  <button onClick={() => { navigator.clipboard.writeText(settings.sepayWebhookUrl || ''); setCopiedUrl(true); setTimeout(() => setCopiedUrl(false), 2000); }} className="px-4 py-2 bg-surface border border-white/10 rounded-lg hover:bg-white/5 transition-colors" disabled={!settings.sepayWebhookUrl}>
                     {copiedUrl ? <Check size={18} className="text-green-400" /> : <Copy size={18} className="text-white" />}
                   </button>
                 </div>
@@ -326,7 +366,7 @@ function DonationSettingsPage() {
               className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-surface/50 hover:bg-surface border border-white/10 rounded-lg text-white font-medium transition-colors"
             >
               <BellRing size={18} className={testStatus === 'Testing...' ? 'animate-bounce text-blue-400' : (testStatus === 'Success!' ? 'text-green-400' : 'text-blue-400')} />
-              <span>{testStatus || 'Send Test Alert'}</span>
+              <span>{testStatus || 'Send Test Donation'}</span>
             </button>
           </div>
         </div>

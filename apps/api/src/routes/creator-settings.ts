@@ -3,6 +3,8 @@ import { Bindings } from "./admin";
 import { CreatorDonationSettingsResponseSchema, UpdateCreatorDonationSettingsSchema, DonationSettingsSchema, PaymentAccountSchema } from "@overlay/schema";
 import { SecretEncryptionService } from "../services/SecretEncryptionService";
 
+import { generateSepayWebhookId, getSepayWebhookUrl } from "../utils/webhook-utils";
+
 const creatorSettingsRouter = new Hono<{ Bindings: Bindings }>();
 
 // Helper to map DB row to schema
@@ -11,7 +13,9 @@ function mapDbRowToSettings(row: any, creatorId: string, publicApiUrl: string | 
   if (!baseUrl) {
     throw new Error("PUBLIC_API_URL is not configured");
   }
-  const sepayWebhookUrl = `${baseUrl}/api/webhooks/sepay/${creatorId}`;
+  
+  const webhookId = row.sepay_webhook_id || null;
+  const sepayWebhookUrl = webhookId ? getSepayWebhookUrl(baseUrl, webhookId) : null;
   return {
     creatorId,
     donationSettings: {
@@ -28,6 +32,7 @@ function mapDbRowToSettings(row: any, creatorId: string, publicApiUrl: string | 
       accountName: row.payment_account_name || '',
     },
     sepayWebhookConfigured: !!row.sepay_webhook_secret,
+    sepayWebhookId: webhookId,
     sepayWebhookUrl
   };
 }
@@ -53,7 +58,8 @@ creatorSettingsRouter.get("/donation-settings", async (c) => {
       donationSettings: defaultDonation,
       paymentAccount: defaultPayment,
       sepayWebhookConfigured: false,
-      sepayWebhookUrl: `${baseUrl}/api/webhooks/sepay/${creatorId}`
+      sepayWebhookId: null,
+      sepayWebhookUrl: null
     });
   }
 
@@ -78,6 +84,16 @@ creatorSettingsRouter.patch("/donation-settings", async (c) => {
 
   const { donationSettings, paymentAccount, sepayWebhookSecret } = result.data;
   
+  // Lookup existing settings to preserve/generate webhook ID
+  const existingRow = await c.env.DB.prepare(
+    "SELECT sepay_webhook_id FROM creator_donation_settings WHERE creator_id = ?"
+  ).bind(creatorId).first<any>();
+  
+  let webhookId = existingRow?.sepay_webhook_id;
+  if (!webhookId && paymentAccount.provider === 'sepay' && donationSettings.enabled) {
+    webhookId = generateSepayWebhookId();
+  }
+  
   let encryptedSecret: string | null = null;
   if (sepayWebhookSecret) {
     try {
@@ -94,7 +110,43 @@ creatorSettingsRouter.patch("/donation-settings", async (c) => {
       INSERT INTO creator_donation_settings (
         creator_id, enabled, min_amount, preset_amounts, allow_message, allow_anonymous,
         payment_provider, payment_bank, payment_account_number, payment_account_name,
-        sepay_webhook_secret, updated_at
+        sepay_webhook_secret, sepay_webhook_id, updated_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
+      )
+      ON CONFLICT(creator_id) DO UPDATE SET
+        enabled = excluded.enabled,
+        min_amount = excluded.min_amount,
+        preset_amounts = excluded.preset_amounts,
+        allow_message = excluded.allow_message,
+        allow_anonymous = excluded.allow_anonymous,
+        payment_provider = excluded.payment_provider,
+        payment_bank = excluded.payment_bank,
+        payment_account_number = excluded.payment_account_number,
+        payment_account_name = excluded.payment_account_name,
+        sepay_webhook_secret = excluded.sepay_webhook_secret,
+        sepay_webhook_id = COALESCE(excluded.sepay_webhook_id, creator_donation_settings.sepay_webhook_id),
+        updated_at = CURRENT_TIMESTAMP
+    `).bind(
+      creatorId,
+      donationSettings.enabled ? 1 : 0,
+      donationSettings.minAmount,
+      JSON.stringify(donationSettings.presetAmounts),
+      donationSettings.allowMessage ? 1 : 0,
+      donationSettings.allowAnonymous ? 1 : 0,
+      paymentAccount.provider,
+      paymentAccount.bank,
+      paymentAccount.accountNumber,
+      paymentAccount.accountName,
+      encryptedSecret,
+      webhookId || null
+    ).run();
+  } else {
+    await c.env.DB.prepare(`
+      INSERT INTO creator_donation_settings (
+        creator_id, enabled, min_amount, preset_amounts, allow_message, allow_anonymous,
+        payment_provider, payment_bank, payment_account_number, payment_account_name,
+        sepay_webhook_id, updated_at
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
       )
@@ -108,7 +160,7 @@ creatorSettingsRouter.patch("/donation-settings", async (c) => {
         payment_bank = excluded.payment_bank,
         payment_account_number = excluded.payment_account_number,
         payment_account_name = excluded.payment_account_name,
-        sepay_webhook_secret = excluded.sepay_webhook_secret,
+        sepay_webhook_id = COALESCE(excluded.sepay_webhook_id, creator_donation_settings.sepay_webhook_id),
         updated_at = CURRENT_TIMESTAMP
     `).bind(
       creatorId,
@@ -121,39 +173,7 @@ creatorSettingsRouter.patch("/donation-settings", async (c) => {
       paymentAccount.bank,
       paymentAccount.accountNumber,
       paymentAccount.accountName,
-      encryptedSecret
-    ).run();
-  } else {
-    await c.env.DB.prepare(`
-      INSERT INTO creator_donation_settings (
-        creator_id, enabled, min_amount, preset_amounts, allow_message, allow_anonymous,
-        payment_provider, payment_bank, payment_account_number, payment_account_name,
-        updated_at
-      ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
-      )
-      ON CONFLICT(creator_id) DO UPDATE SET
-        enabled = excluded.enabled,
-        min_amount = excluded.min_amount,
-        preset_amounts = excluded.preset_amounts,
-        allow_message = excluded.allow_message,
-        allow_anonymous = excluded.allow_anonymous,
-        payment_provider = excluded.payment_provider,
-        payment_bank = excluded.payment_bank,
-        payment_account_number = excluded.payment_account_number,
-        payment_account_name = excluded.payment_account_name,
-        updated_at = CURRENT_TIMESTAMP
-    `).bind(
-      creatorId,
-      donationSettings.enabled ? 1 : 0,
-      donationSettings.minAmount,
-      JSON.stringify(donationSettings.presetAmounts),
-      donationSettings.allowMessage ? 1 : 0,
-      donationSettings.allowAnonymous ? 1 : 0,
-      paymentAccount.provider,
-      paymentAccount.bank,
-      paymentAccount.accountNumber,
-      paymentAccount.accountName
+      webhookId || null
     ).run();
   }
 
@@ -189,6 +209,32 @@ creatorSettingsRouter.post("/donation-settings/generate-sepay-secret", async (c)
     });
   } catch (e: any) {
     return c.json({ error: e.message || "Failed to generate and save secret" }, 500);
+  }
+});
+
+// Rotate Webhook URL
+creatorSettingsRouter.post("/donation-settings/rotate-sepay-webhook-url", async (c) => {
+  const creatorId = c.req.param("id")!;
+  
+  const webhookId = generateSepayWebhookId();
+  const baseUrl = c.env.PUBLIC_API_URL;
+  if (!baseUrl) {
+    return c.json({ error: "PUBLIC_API_URL is not configured" }, 500);
+  }
+
+  try {
+    await c.env.DB.prepare(`
+      UPDATE creator_donation_settings 
+      SET sepay_webhook_id = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE creator_id = ?
+    `).bind(webhookId, creatorId).run();
+
+    return c.json({
+      webhookId,
+      webhookUrl: getSepayWebhookUrl(baseUrl, webhookId)
+    });
+  } catch (e: any) {
+    return c.json({ error: "Failed to rotate webhook URL" }, 500);
   }
 });
 
