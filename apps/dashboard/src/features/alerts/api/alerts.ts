@@ -1,42 +1,24 @@
 import type { AlertDefinition } from "@overlay/schema";
 
-import { API_URL } from "../../../api/client";
-const API_BASE = `${API_URL}/api/admin/creator/default_creator/alerts`;
+import { apiClient } from "../../../api/client";
+const API_BASE = `/api/admin/creator/qal1215/alerts`;
 
 export async function fetchAlerts(): Promise<AlertDefinition[]> {
-  const res = await fetch(API_BASE);
-  if (!res.ok) throw new Error("Failed to fetch alerts");
-  return res.json();
+  return apiClient.get<AlertDefinition[]>(API_BASE);
 }
 
 export async function fetchAlert(alertId: string): Promise<AlertDefinition> {
-  const res = await fetch(`${API_BASE}/${alertId}`);
-  if (!res.ok) throw new Error("Failed to fetch alert");
-  return res.json();
+  return apiClient.get<AlertDefinition>(`${API_BASE}/${alertId}`);
 }
 
 export async function createAlert(data: Partial<AlertDefinition>): Promise<{ id: string }> {
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Failed to create alert");
-  return res.json();
+  return apiClient.post<{ id: string }>(API_BASE, data);
 }
 
 export async function updateAlert({ id, data }: { id: string; data: Partial<AlertDefinition> }): Promise<void> {
-  const res = await fetch(`${API_BASE}/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Failed to update alert");
+  return apiClient.patch<void>(`${API_BASE}/${id}`, data);
 }
 
 export async function deleteAlert(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error("Failed to delete alert");
+  return apiClient.delete<void>(`${API_BASE}/${id}`);
 }

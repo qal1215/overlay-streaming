@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreatorConfig } from "@overlay/schema";
 import { apiClient } from "../../../api/client";
 
-const CREATOR_ID = "default_creator"; // Hardcoded for now
+const CREATOR_ID = "qal1215"; // Hardcoded for now
 
 export function useCreatorConfig() {
   return useQuery({

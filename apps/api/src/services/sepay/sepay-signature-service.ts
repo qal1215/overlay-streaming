@@ -29,21 +29,20 @@ export class SepaySignatureService {
     const payloadToSign = `${timestampStr}.${rawBody}`;
     const bodyData = encoder.encode(payloadToSign);
     
-    const actualSignature = signatureHeader.replace(/^sha256=/, '');
+    const actualSignatureHex = signatureHeader.replace(/^sha256=/, '');
     
-    const signatureBuffer = await crypto.subtle.sign("HMAC", key, bodyData);
-    
-    const expectedSignatureHex = Array.from(new Uint8Array(signatureBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    return this.timingSafeEqual(actualSignature, expectedSignatureHex);
-  }
-
-  private timingSafeEqual(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
-    let result = 0;
-    for (let i = 0; i < a.length; i++) {
-      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    // Convert hex signature to Uint8Array for crypto.subtle.verify
+    if (actualSignatureHex.length !== 64) return false;
+    const signatureBytes = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) {
+      signatureBytes[i] = parseInt(actualSignatureHex.substring(i * 2, i * 2 + 2), 16);
     }
-    return result === 0;
+    
+    try {
+      // Use native constant-time verification
+      return await crypto.subtle.verify("HMAC", key, signatureBytes, bodyData);
+    } catch (e) {
+      return false;
+    }
   }
 }

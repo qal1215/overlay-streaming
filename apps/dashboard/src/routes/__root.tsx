@@ -1,5 +1,5 @@
 import { createRootRoute, Link, Outlet, Navigate, useRouterState } from '@tanstack/react-router'
-import { LayoutDashboard, Layers, Bell, Volume2, Image, Settings, Tv, LogOut } from 'lucide-react'
+import { LayoutDashboard, Layers, Bell, Volume2, Image, Settings, Tv, LogOut, Heart } from 'lucide-react'
 import { useDevAdminAuth } from '../hooks/useAuth'
 
 export const Route = createRootRoute({
@@ -10,11 +10,12 @@ function RootComponent() {
   const { isAuthenticated, logout } = useDevAdminAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  if (!isAuthenticated && pathname !== '/login') {
+  const isPublicRoute = pathname === '/login' || pathname.startsWith('/donate');
+  if (!isAuthenticated && !isPublicRoute) {
     return <Navigate to="/login" />;
   }
 
-  if (pathname === '/login') {
+  if (pathname === '/login' || pathname.startsWith('/donate')) {
     return (
       <div className="flex h-screen bg-background text-text overflow-hidden relative">
         <div className="absolute top-0 -left-1/4 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background -z-10 pointer-events-none" />
@@ -36,6 +37,7 @@ function RootComponent() {
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-4 space-y-1">
             <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Overview" />
+            <NavItem to="/donations" icon={<Heart size={20} />} label="Donations" />
             <NavItem to="/overlays" icon={<Layers size={20} />} label="Overlays" />
             <NavItem to="/alerts" icon={<Bell size={20} />} label="Alerts" />
             <NavItem to="/audio" icon={<Volume2 size={20} />} label="Audio" />

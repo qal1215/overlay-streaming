@@ -50,7 +50,10 @@ webhooksRouter.post("/sepay/:webhookId", async (c) => {
     );
   } catch (e: any) {
     console.error("[SePay Webhook] Processing failed:", e.message);
-    return c.json({ error: e.message }, 400);
+    if (e.message === "Invalid signature or expired timestamp") {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+    return c.json({ error: "Invalid webhook payload" }, 400);
   }
 
   const eventId = donationEvent.providerTransactionId;

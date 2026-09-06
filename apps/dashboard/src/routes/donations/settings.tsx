@@ -1,29 +1,29 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
-import { Save, BellRing, Copy, Key, Check } from 'lucide-react'
-import { API_URL, apiClient } from '../../api/client'
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { Save, BellRing, Copy, Key, Check } from "lucide-react";
+import { API_URL, apiClient } from "../../api/client";
 
-export const Route = createFileRoute('/donations/settings')({
+export const Route = createFileRoute("/donations/settings")({
   component: DonationSettingsPage,
-})
+});
 
 function DonationSettingsPage() {
-  const [testStatus, setTestStatus] = useState<string | null>(null)
-  
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [settings, setSettings] = useState<any>(null)
-  
-  const [copiedUrl, setCopiedUrl] = useState(false)
-  const [sepaySecret, setSepaySecret] = useState("")
+  const [testStatus, setTestStatus] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
+
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [sepaySecret, setSepaySecret] = useState("");
 
   const [testAlertData, setTestAlertData] = useState({
-    name: 'Test User',
+    name: "Test User",
     amount: 50000,
-    message: 'This is a test alert'
+    message: "This is a test alert",
   });
 
-  const creatorId = 'qal1215'; // Hardcoded for dashboard MVP, usually from auth context
+  const creatorId = "qal1215"; // Hardcoded for dashboard MVP, usually from auth context
 
   const defaultSettings = {
     donationSettings: {
@@ -31,136 +31,163 @@ function DonationSettingsPage() {
       minAmount: 10000,
       presetAmounts: [10000, 50000, 100000, 200000, 500000],
       allowMessage: true,
-      allowAnonymous: true
+      allowAnonymous: true,
     },
     paymentAccount: {
-      bank: '',
-      accountNumber: '',
-      accountName: ''
+      bank: "",
+      accountNumber: "",
+      accountName: "",
     },
     sepayWebhookConfigured: false,
-    sepayWebhookUrl: ''
+    sepayWebhookUrl: "",
   };
 
   useEffect(() => {
     try {
-      apiClient.get(`/api/admin/creator/${creatorId}/donation-settings`)
-        .then(data => {
-          setSettings(data || defaultSettings)
-          setLoading(false)
+      apiClient
+        .get(`/api/admin/creator/${creatorId}/donation-settings`)
+        .then((data) => {
+          setSettings(data || defaultSettings);
+          setLoading(false);
         })
-        .catch(err => {
-          console.error(err)
-          setSettings(defaultSettings)
-          setLoading(false)
-        })
+        .catch((err) => {
+          console.error(err);
+          setSettings(defaultSettings);
+          setLoading(false);
+        });
     } catch (err) {
       console.error(err);
       setSettings(defaultSettings);
       setLoading(false);
     }
-  }, [])
+  }, []);
 
   const handleTestAlert = async () => {
-    setTestStatus('Testing...')
+    setTestStatus("Testing...");
     try {
-      const res = await fetch(`${API_URL}/api/admin/creator/qal1215/test-alert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: testAlertData.name,
-          amount: testAlertData.amount,
-          currency: "VND",
-          message: testAlertData.message,
-          type: "donation"
-        })
+      await apiClient.post(`/api/admin/creator/${creatorId}/test-alert`, {
+        name: testAlertData.name,
+        amount: testAlertData.amount,
+        currency: "VND",
+        message: testAlertData.message,
+        type: "donation"
       });
-      if (res.ok) {
-        setTestStatus('Success!')
-        setTimeout(() => setTestStatus(null), 3000)
-      } else {
-        setTestStatus('Failed')
-      }
+      setTestStatus('Success!')
+      setTimeout(() => setTestStatus(null), 3000)
     } catch (_e) {
-      setTestStatus('Error')
+      setTestStatus("Error");
     }
-  }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    
+
     // In a real app, we'd grab values from controlled inputs.
     // For MVP, we assume the state is already updated via onChange.
     try {
-      await apiClient.patch(`/api/admin/creator/${creatorId}/donation-settings`, {
-        creatorId,
-        donationSettings: settings.donationSettings,
-        paymentAccount: settings.paymentAccount,
-        ...(sepaySecret && { sepayWebhookSecret: sepaySecret })
-      });
+      await apiClient.patch(
+        `/api/admin/creator/${creatorId}/donation-settings`,
+        {
+          creatorId,
+          donationSettings: settings.donationSettings,
+          paymentAccount: settings.paymentAccount,
+          ...(sepaySecret && { sepayWebhookSecret: sepaySecret }),
+        },
+      );
       if (sepaySecret) {
-        setSettings({...settings, sepayWebhookConfigured: true});
+        setSettings({ ...settings, sepayWebhookConfigured: true });
         setSepaySecret("");
       }
-      alert('Saved successfully!');
+      alert("Saved successfully!");
     } catch (_e) {
-      alert('Failed to save');
+      alert("Failed to save");
     } finally {
       setSaving(false);
     }
-  }
+  };
 
   const handleRotateWebhookUrl = async () => {
-    if (!confirm('This will immediately invalidate your old webhook URL. Are you sure?')) return;
-    
+    if (
+      !confirm(
+        "This will immediately invalidate your old webhook URL. Are you sure?",
+      )
+    )
+      return;
+
     try {
-      const data: any = await apiClient.post(`/api/admin/creator/${creatorId}/donation-settings/rotate-sepay-webhook-url`, {});
+      const data: any = await apiClient.post(
+        `/api/admin/creator/${creatorId}/donation-settings/rotate-sepay-webhook-url`,
+        {},
+      );
       if (data.webhookUrl) {
         setSettings({ ...settings, sepayWebhookUrl: data.webhookUrl });
-        alert('Webhook URL rotated successfully');
+        alert("Webhook URL rotated successfully");
       }
     } catch (_e) {
-      alert('Failed to rotate webhook URL');
+      alert("Failed to rotate webhook URL");
     }
-  }
+  };
 
   if (loading) return <div className="p-8 text-white">Loading...</div>;
 
   return (
     <div className="p-8 h-full overflow-y-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Donation Settings</h1>
-        <p className="text-text-muted">Configure your payment details and donation page rules.</p>
+        <h1 className="text-3xl font-bold text-white mb-2">
+          Donation Settings
+        </h1>
+        <p className="text-text-muted">
+          Configure your payment details and donation page rules.
+        </p>
       </div>
 
       <div className="bg-surface/30 border border-white/5 rounded-xl backdrop-blur-sm p-6 mb-8">
-        <h2 className="text-lg font-bold text-white mb-4">Donation Setup Status</h2>
+        <h2 className="text-lg font-bold text-white mb-4">
+          Donation Setup Status
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="flex items-center space-x-2">
-            <div className={`p-1 rounded-full ${settings.donationSettings.enabled ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            <div
+              className={`p-1 rounded-full ${settings.donationSettings.enabled ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+            >
               <Check size={16} />
             </div>
-            <span className="text-sm font-medium text-white">Donations enabled</span>
+            <span className="text-sm font-medium text-white">
+              Donations enabled
+            </span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className={`p-1 rounded-full ${settings.paymentAccount.bank && settings.paymentAccount.accountNumber ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            <div
+              className={`p-1 rounded-full ${settings.paymentAccount.bank && settings.paymentAccount.accountNumber ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+            >
               <Check size={16} />
             </div>
-            <span className="text-sm font-medium text-white">Bank configured</span>
+            <span className="text-sm font-medium text-white">
+              Bank configured
+            </span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className={`p-1 rounded-full ${settings.sepayWebhookConfigured ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            <div
+              className={`p-1 rounded-full ${settings.sepayWebhookConfigured ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+            >
               <Check size={16} />
             </div>
             <span className="text-sm font-medium text-white">SePay secret</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className={`p-1 rounded-full ${settings.donationSettings.enabled && settings.paymentAccount.bank && settings.paymentAccount.accountNumber && settings.sepayWebhookConfigured ? 'bg-green-500 text-black' : 'bg-surface border border-white/10 text-text-muted'}`}>
+            <div
+              className={`p-1 rounded-full ${settings.donationSettings.enabled && settings.paymentAccount.bank && settings.paymentAccount.accountNumber && settings.sepayWebhookConfigured ? "bg-green-500 text-black" : "bg-surface border border-white/10 text-text-muted"}`}
+            >
               <Check size={16} />
             </div>
             <span className="text-sm font-bold text-white">
-              {settings.donationSettings.enabled && settings.paymentAccount.bank && settings.paymentAccount.accountNumber && settings.sepayWebhookConfigured ? 'Ready to receive' : 'Not ready'}
+              {settings.donationSettings.enabled &&
+              settings.paymentAccount.bank &&
+              settings.paymentAccount.accountNumber &&
+              settings.sepayWebhookConfigured
+                ? "Ready to receive"
+                : "Not ready"}
             </span>
           </div>
         </div>
@@ -168,75 +195,151 @@ function DonationSettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          
           <div className="bg-surface/30 border border-white/5 rounded-xl backdrop-blur-sm p-6">
-            <h2 className="text-xl font-bold text-white mb-6">Payment Configuration</h2>
-            
+            <h2 className="text-xl font-bold text-white mb-6">
+              Payment Configuration
+            </h2>
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Payment Provider</label>
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Payment Provider
+                </label>
                 <select className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50">
                   <option value="sepay">SePay (VietQR)</option>
-                  <option value="payos" disabled>PayOS (Coming Soon)</option>
-                  <option value="stripe" disabled>Stripe (Coming Soon)</option>
                 </select>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-text-muted mb-1">Bank Name / BIN</label>
-                  <input type="text" 
-                    value={settings.paymentAccount.bank} 
-                    onChange={e => setSettings({...settings, paymentAccount: {...settings.paymentAccount, bank: e.target.value}})}
-                    className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Bank Name / BIN
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.paymentAccount.bank}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        paymentAccount: {
+                          ...settings.paymentAccount,
+                          bank: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-muted mb-1">Account Number</label>
-                  <input type="text" 
+                  <label className="block text-sm font-medium text-text-muted mb-1">
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
                     value={settings.paymentAccount.accountNumber}
-                    onChange={e => setSettings({...settings, paymentAccount: {...settings.paymentAccount, accountNumber: e.target.value}})}
-                    className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        paymentAccount: {
+                          ...settings.paymentAccount,
+                          accountNumber: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Account Name</label>
-                <input type="text" 
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Account Name
+                </label>
+                <input
+                  type="text"
                   value={settings.paymentAccount.accountName}
-                  onChange={e => setSettings({...settings, paymentAccount: {...settings.paymentAccount, accountName: e.target.value}})}
-                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      paymentAccount: {
+                        ...settings.paymentAccount,
+                        accountName: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
               </div>
             </div>
-            
+
             <div className="mt-8 pt-6 border-t border-white/10 space-y-4">
-              <h3 className="text-lg font-bold text-white mb-4">SePay Integration</h3>
-              
+              <h3 className="text-lg font-bold text-white mb-4">
+                SePay Integration
+              </h3>
+
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-text-muted">Webhook URL</label>
+                  <label className="block text-sm font-medium text-text-muted">
+                    Webhook URL
+                  </label>
                   {settings.sepayWebhookUrl && (
-                    <button onClick={handleRotateWebhookUrl} type="button" className="text-xs text-blue-400 hover:text-blue-300">
+                    <button
+                      onClick={handleRotateWebhookUrl}
+                      type="button"
+                      className="text-xs text-blue-400 hover:text-blue-300"
+                    >
                       Regenerate
                     </button>
                   )}
                 </div>
                 <div className="flex space-x-2">
-                  <input type="text" readOnly value={settings.sepayWebhookUrl || 'Save settings to generate...'} className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white/70 font-mono text-sm" />
-                  <button onClick={() => { navigator.clipboard.writeText(settings.sepayWebhookUrl || ''); setCopiedUrl(true); setTimeout(() => setCopiedUrl(false), 2000); }} className="px-4 py-2 bg-surface border border-white/10 rounded-lg hover:bg-white/5 transition-colors" disabled={!settings.sepayWebhookUrl}>
-                    {copiedUrl ? <Check size={18} className="text-green-400" /> : <Copy size={18} className="text-white" />}
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      settings.sepayWebhookUrl || "Save settings to generate..."
+                    }
+                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white/70 font-mono text-sm"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        settings.sepayWebhookUrl || "",
+                      );
+                      setCopiedUrl(true);
+                      setTimeout(() => setCopiedUrl(false), 2000);
+                    }}
+                    className="px-4 py-2 bg-surface border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
+                    disabled={!settings.sepayWebhookUrl}
+                  >
+                    {copiedUrl ? (
+                      <Check size={18} className="text-green-400" />
+                    ) : (
+                      <Copy size={18} className="text-white" />
+                    )}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Webhook Secret</label>
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Webhook Secret
+                </label>
                 <div className="space-y-2">
-                  <input type="password" 
+                  <input
+                    type="password"
                     value={sepaySecret}
-                    onChange={e => setSepaySecret(e.target.value)}
-                    placeholder={settings.sepayWebhookConfigured ? "•••••••••••••••• (Configured. Enter to update)" : "Enter secret from SePay..."}
-                    className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-                  <p className="text-xs text-text-muted">Paste the API Token or Webhook Secret provided by SePay.</p>
+                    onChange={(e) => setSepaySecret(e.target.value)}
+                    placeholder={
+                      settings.sepayWebhookConfigured
+                        ? "•••••••••••••••• (Configured. Enter to update)"
+                        : "Enter secret from SePay..."
+                    }
+                    className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
+                  <p className="text-xs text-text-muted">
+                    Paste the API Token or Webhook Secret provided by SePay.
+                  </p>
                 </div>
               </div>
             </div>
@@ -244,105 +347,204 @@ function DonationSettingsPage() {
 
           <div className="bg-surface/30 border border-white/5 rounded-xl backdrop-blur-sm p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Donation Page Rules</h2>
+              <h2 className="text-xl font-bold text-white">
+                Donation Page Rules
+              </h2>
               <label className="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" 
-                  checked={settings.donationSettings.enabled} 
-                  onChange={e => setSettings({...settings, donationSettings: {...settings.donationSettings, enabled: e.target.checked}})}
-                  className="form-checkbox text-blue-500 rounded border-white/10 bg-surface w-5 h-5" />
+                <input
+                  type="checkbox"
+                  checked={settings.donationSettings.enabled}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      donationSettings: {
+                        ...settings.donationSettings,
+                        enabled: e.target.checked,
+                      },
+                    })
+                  }
+                  className="form-checkbox text-blue-500 rounded border-white/10 bg-surface w-5 h-5"
+                />
                 <span className="text-white font-medium">Enable Donations</span>
               </label>
             </div>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Minimum Amount (VND)</label>
-                <input type="number" 
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Minimum Amount (VND)
+                </label>
+                <input
+                  type="number"
                   value={settings.donationSettings.minAmount}
-                  onChange={e => setSettings({...settings, donationSettings: {...settings.donationSettings, minAmount: parseInt(e.target.value) || 10000}})}
-                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      donationSettings: {
+                        ...settings.donationSettings,
+                        minAmount: parseInt(e.target.value) || 10000,
+                      },
+                    })
+                  }
+                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Preset Amounts (Comma separated)</label>
-                <input type="text" 
-                  value={settings.donationSettings.presetAmounts.join(', ')}
-                  onChange={e => {
-                    const vals = e.target.value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-                    setSettings({...settings, donationSettings: {...settings.donationSettings, presetAmounts: vals}});
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Preset Amounts (Comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={settings.donationSettings.presetAmounts.join(", ")}
+                  onChange={(e) => {
+                    const vals = e.target.value
+                      .split(",")
+                      .map((s) => parseInt(s.trim()))
+                      .filter((n) => !isNaN(n));
+                    setSettings({
+                      ...settings,
+                      donationSettings: {
+                        ...settings.donationSettings,
+                        presetAmounts: vals,
+                      },
+                    });
                   }}
-                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
               </div>
-              
+
               <div className="flex space-x-6 pt-2">
                 <label className="flex items-center space-x-2 cursor-pointer">
-                  <input type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={settings.donationSettings.allowMessage}
-                    onChange={e => setSettings({...settings, donationSettings: {...settings.donationSettings, allowMessage: e.target.checked}})}
-                    className="form-checkbox text-blue-500 rounded border-white/10 bg-surface" />
-                  <span className="text-text-muted text-sm">Allow Messages</span>
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        donationSettings: {
+                          ...settings.donationSettings,
+                          allowMessage: e.target.checked,
+                        },
+                      })
+                    }
+                    className="form-checkbox text-blue-500 rounded border-white/10 bg-surface"
+                  />
+                  <span className="text-text-muted text-sm">
+                    Allow Messages
+                  </span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
-                  <input type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={settings.donationSettings.allowAnonymous}
-                    onChange={e => setSettings({...settings, donationSettings: {...settings.donationSettings, allowAnonymous: e.target.checked}})}
-                    className="form-checkbox text-blue-500 rounded border-white/10 bg-surface" />
-                  <span className="text-text-muted text-sm">Allow Anonymous</span>
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        donationSettings: {
+                          ...settings.donationSettings,
+                          allowAnonymous: e.target.checked,
+                        },
+                      })
+                    }
+                    className="form-checkbox text-blue-500 rounded border-white/10 bg-surface"
+                  />
+                  <span className="text-text-muted text-sm">
+                    Allow Anonymous
+                  </span>
                 </label>
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-end">
-            <button onClick={handleSave} disabled={saving} className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 rounded-lg text-white font-bold transition-all shadow-lg shadow-purple-500/20">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 rounded-lg text-white font-bold transition-all shadow-lg shadow-purple-500/20"
+            >
               <Save size={20} />
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+              <span>{saving ? "Saving..." : "Save Changes"}</span>
             </button>
           </div>
-
         </div>
 
         <div className="space-y-6">
           <div className="bg-surface/30 border border-white/5 rounded-xl backdrop-blur-sm p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Donation Alerts</h2>
+            <h2 className="text-xl font-bold text-white mb-4">
+              Donation Alerts
+            </h2>
             <p className="text-text-muted text-sm mb-6">
-              When a donation is paid, it will trigger an alert via your configured alert presets.
+              When a donation is paid, it will trigger an alert via your
+              configured alert presets.
             </p>
-            
+
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Amount</label>
-                <input type="number" 
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Amount
+                </label>
+                <input
+                  type="number"
                   value={testAlertData.amount}
-                  onChange={e => setTestAlertData({...testAlertData, amount: parseInt(e.target.value) || 0})}
-                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  onChange={(e) =>
+                    setTestAlertData({
+                      ...testAlertData,
+                      amount: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Donor Name</label>
-                <input type="text" 
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Donor Name
+                </label>
+                <input
+                  type="text"
                   value={testAlertData.name}
-                  onChange={e => setTestAlertData({...testAlertData, name: e.target.value})}
-                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  onChange={(e) =>
+                    setTestAlertData({ ...testAlertData, name: e.target.value })
+                  }
+                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Message</label>
-                <textarea 
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Message
+                </label>
+                <textarea
                   value={testAlertData.message}
-                  onChange={e => setTestAlertData({...testAlertData, message: e.target.value})}
-                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none h-20" />
+                  onChange={(e) =>
+                    setTestAlertData({
+                      ...testAlertData,
+                      message: e.target.value,
+                    })
+                  }
+                  className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none h-20"
+                />
               </div>
             </div>
 
-            <button 
+            <button
               onClick={handleTestAlert}
               className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-surface/50 hover:bg-surface border border-white/10 rounded-lg text-white font-medium transition-colors"
             >
-              <BellRing size={18} className={testStatus === 'Testing...' ? 'animate-bounce text-blue-400' : (testStatus === 'Success!' ? 'text-green-400' : 'text-blue-400')} />
-              <span>{testStatus || 'Send Test Donation'}</span>
+              <BellRing
+                size={18}
+                className={
+                  testStatus === "Testing..."
+                    ? "animate-bounce text-blue-400"
+                    : testStatus === "Success!"
+                      ? "text-green-400"
+                      : "text-blue-400"
+                }
+              />
+              <span>{testStatus || "Send Test Donation"}</span>
             </button>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

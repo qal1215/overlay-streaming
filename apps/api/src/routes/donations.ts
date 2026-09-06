@@ -135,7 +135,7 @@ donationsRouter.get("/donations/:id", async (c) => {
         donationId: donation.id,
         amount: donation.amount,
         currency: donation.currency,
-        reference: donation.paymentReference,
+        reference: donation.payment_reference,
         paymentAccount: {
           bank: settingsRow.payment_bank,
           accountNumber: settingsRow.payment_account_number,

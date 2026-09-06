@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AlertPreset } from "@overlay/schema";
 import { apiClient } from "../../../api/client";
 
-const CREATOR_ID = "default_creator";
+const CREATOR_ID = "qal1215";
 
 export interface AlertRow {
   id: string;

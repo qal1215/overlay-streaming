@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { API_URL } from "../../api/client";
+import { API_URL } from "../../../api/client";
 import { Heart, Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/donate/$creatorId")({
+export const Route = createFileRoute("/donate/$creatorId/")({
   component: PublicDonationPage,
 });
 
@@ -19,7 +19,7 @@ function PublicDonationPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/public/creators/${creatorId}/donation-page`)
+    fetch(`${API_URL}/api/public/creators/${creatorId}/donation-page`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) throw new Error(data.error);
@@ -35,7 +35,7 @@ function PublicDonationPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${API_URL}/public/creators/${creatorId}/donations`,
+        `${API_URL}/api/public/creators/${creatorId}/donations`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -77,7 +77,7 @@ function PublicDonationPage() {
 
   // IDLE State - Donation Form
   return (
-    <div className="min-h-screen bg-background py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-background py-12 px-4 relative overflow-y-auto">
       {/* Background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[500px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
 

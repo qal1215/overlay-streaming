@@ -82,7 +82,7 @@ function OverlayEditorPage() {
 
     const mockEvent: AlertEvent = {
       eventId: `evt_${Date.now()}`,
-      creatorId: "default_creator",
+      creatorId: "qal1215",
       source: "dashboard",
       type: "donation",
       timestamp: Date.now(),

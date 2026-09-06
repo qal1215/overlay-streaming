@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, API_URL } from "../../../api/client";
 
-const CREATOR_ID = "default_creator";
+const CREATOR_ID = "qal1215";
 
 export interface AudioRow {
   id: string;

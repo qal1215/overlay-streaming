@@ -8,7 +8,7 @@ interface TestAlertButtonProps {
   onTestLocally?: () => void;
 }
 
-export function TestAlertButton({ creatorId = "default_creator", overlayId, onTestLocally }: TestAlertButtonProps) {
+export function TestAlertButton({ creatorId = "qal1215", overlayId, onTestLocally }: TestAlertButtonProps) {
   const [isSending, setIsSending] = useState(false);
 
   const handleTestAlert = async () => {

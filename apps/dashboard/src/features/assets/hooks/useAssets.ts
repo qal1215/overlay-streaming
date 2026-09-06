@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, API_URL } from "../../../api/client";
 import type { AssetDefinition } from "@overlay/schema";
 
-const CREATOR_ID = "default_creator";
+const CREATOR_ID = "qal1215";
 
 export function useAssets(type?: string) {
   return useQuery({

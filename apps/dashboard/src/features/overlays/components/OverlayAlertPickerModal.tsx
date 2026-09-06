@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { AlertDefinition } from "@overlay/schema";
 
-import { API_URL } from "../../../api/client";
+import { apiClient } from "../../../api/client";
 
 interface OverlayAlertPickerModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ export function OverlayAlertPickerModal({
   isOpen,
   onClose,
   onSelect,
-  creatorId = "default_creator",
+  creatorId = "qal1215",
 }: OverlayAlertPickerModalProps) {
   const [alerts, setAlerts] = useState<AlertDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,8 +23,7 @@ export function OverlayAlertPickerModal({
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      fetch(`${API_URL}/api/admin/creator/${creatorId}/alerts`)
-        .then((res) => res.json())
+      apiClient.get<AlertDefinition[]>(`/api/admin/creator/${creatorId}/alerts`)
         .then((data) => {
           setAlerts(data);
         })

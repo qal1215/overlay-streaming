@@ -18,13 +18,13 @@ import { Route as AlertsIdRouteImport } from './routes/alerts/$id'
 import { Route as AlertsPresetsRouteImport } from './routes/alerts/presets'
 import { Route as AssetsIndexRouteImport } from './routes/assets/index'
 import { Route as AudioIndexRouteImport } from './routes/audio/index'
-import { Route as DonateCreatorIdRouteImport } from './routes/donate/$creatorId'
 import { Route as DonationsIndexRouteImport } from './routes/donations/index'
 import { Route as DonationsHistoryRouteImport } from './routes/donations/history'
 import { Route as DonationsSettingsRouteImport } from './routes/donations/settings'
 import { Route as OverlaysIndexRouteImport } from './routes/overlays/index'
 import { Route as OverlaysIdRouteImport } from './routes/overlays/$id'
-import { Route as DonateCreatorIdPaymentDonationIdRouteImport } from './routes/donate/$creatorId.payment.$donationId'
+import { Route as DonateCreatorIdIndexRouteImport } from './routes/donate/$creatorId/index'
+import { Route as DonateCreatorIdPaymentDonationIdRouteImport } from './routes/donate/$creatorId/payment.$donationId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -71,11 +71,6 @@ const AudioIndexRoute = AudioIndexRouteImport.update({
   path: '/audio/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DonateCreatorIdRoute = DonateCreatorIdRouteImport.update({
-  id: '/donate/$creatorId',
-  path: '/donate/$creatorId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DonationsIndexRoute = DonationsIndexRouteImport.update({
   id: '/donations/',
   path: '/donations/',
@@ -101,11 +96,16 @@ const OverlaysIdRoute = OverlaysIdRouteImport.update({
   path: '/overlays/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DonateCreatorIdIndexRoute = DonateCreatorIdIndexRouteImport.update({
+  id: '/donate/$creatorId/',
+  path: '/donate/$creatorId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DonateCreatorIdPaymentDonationIdRoute =
   DonateCreatorIdPaymentDonationIdRouteImport.update({
-    id: '/payment/$donationId',
-    path: '/payment/$donationId',
-    getParentRoute: () => DonateCreatorIdRoute,
+    id: '/donate/$creatorId/payment/$donationId',
+    path: '/donate/$creatorId/payment/$donationId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -115,7 +115,6 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
-  '/donate/$creatorId': typeof DonateCreatorIdRouteWithChildren
   '/donations/history': typeof DonationsHistoryRoute
   '/donations/settings': typeof DonationsSettingsRoute
   '/overlays/$id': typeof OverlaysIdRoute
@@ -124,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/audio/': typeof AudioIndexRoute
   '/donations/': typeof DonationsIndexRoute
   '/overlays/': typeof OverlaysIndexRoute
+  '/donate/$creatorId/': typeof DonateCreatorIdIndexRoute
   '/donate/$creatorId/payment/$donationId': typeof DonateCreatorIdPaymentDonationIdRoute
 }
 export interface FileRoutesByTo {
@@ -133,7 +133,6 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
-  '/donate/$creatorId': typeof DonateCreatorIdRouteWithChildren
   '/donations/history': typeof DonationsHistoryRoute
   '/donations/settings': typeof DonationsSettingsRoute
   '/overlays/$id': typeof OverlaysIdRoute
@@ -142,6 +141,7 @@ export interface FileRoutesByTo {
   '/audio': typeof AudioIndexRoute
   '/donations': typeof DonationsIndexRoute
   '/overlays': typeof OverlaysIndexRoute
+  '/donate/$creatorId': typeof DonateCreatorIdIndexRoute
   '/donate/$creatorId/payment/$donationId': typeof DonateCreatorIdPaymentDonationIdRoute
 }
 export interface FileRoutesById {
@@ -152,7 +152,6 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/alerts/$id': typeof AlertsIdRoute
   '/alerts/presets': typeof AlertsPresetsRoute
-  '/donate/$creatorId': typeof DonateCreatorIdRouteWithChildren
   '/donations/history': typeof DonationsHistoryRoute
   '/donations/settings': typeof DonationsSettingsRoute
   '/overlays/$id': typeof OverlaysIdRoute
@@ -161,6 +160,7 @@ export interface FileRoutesById {
   '/audio/': typeof AudioIndexRoute
   '/donations/': typeof DonationsIndexRoute
   '/overlays/': typeof OverlaysIndexRoute
+  '/donate/$creatorId/': typeof DonateCreatorIdIndexRoute
   '/donate/$creatorId/payment/$donationId': typeof DonateCreatorIdPaymentDonationIdRoute
 }
 export interface FileRouteTypes {
@@ -172,7 +172,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
-    | '/donate/$creatorId'
     | '/donations/history'
     | '/donations/settings'
     | '/overlays/$id'
@@ -181,6 +180,7 @@ export interface FileRouteTypes {
     | '/audio/'
     | '/donations/'
     | '/overlays/'
+    | '/donate/$creatorId/'
     | '/donate/$creatorId/payment/$donationId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -190,7 +190,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
-    | '/donate/$creatorId'
     | '/donations/history'
     | '/donations/settings'
     | '/overlays/$id'
@@ -199,6 +198,7 @@ export interface FileRouteTypes {
     | '/audio'
     | '/donations'
     | '/overlays'
+    | '/donate/$creatorId'
     | '/donate/$creatorId/payment/$donationId'
   id:
     | '__root__'
@@ -208,7 +208,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/alerts/$id'
     | '/alerts/presets'
-    | '/donate/$creatorId'
     | '/donations/history'
     | '/donations/settings'
     | '/overlays/$id'
@@ -217,6 +216,7 @@ export interface FileRouteTypes {
     | '/audio/'
     | '/donations/'
     | '/overlays/'
+    | '/donate/$creatorId/'
     | '/donate/$creatorId/payment/$donationId'
   fileRoutesById: FileRoutesById
 }
@@ -227,7 +227,6 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   AlertsIdRoute: typeof AlertsIdRoute
   AlertsPresetsRoute: typeof AlertsPresetsRoute
-  DonateCreatorIdRoute: typeof DonateCreatorIdRouteWithChildren
   DonationsHistoryRoute: typeof DonationsHistoryRoute
   DonationsSettingsRoute: typeof DonationsSettingsRoute
   OverlaysIdRoute: typeof OverlaysIdRoute
@@ -236,6 +235,8 @@ export interface RootRouteChildren {
   AudioIndexRoute: typeof AudioIndexRoute
   DonationsIndexRoute: typeof DonationsIndexRoute
   OverlaysIndexRoute: typeof OverlaysIndexRoute
+  DonateCreatorIdIndexRoute: typeof DonateCreatorIdIndexRoute
+  DonateCreatorIdPaymentDonationIdRoute: typeof DonateCreatorIdPaymentDonationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -303,13 +304,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AudioIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/donate/$creatorId': {
-      id: '/donate/$creatorId'
-      path: '/donate/$creatorId'
-      fullPath: '/donate/$creatorId'
-      preLoaderRoute: typeof DonateCreatorIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/donations/': {
       id: '/donations/'
       path: '/donations'
@@ -345,27 +339,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OverlaysIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/donate/$creatorId/': {
+      id: '/donate/$creatorId/'
+      path: '/donate/$creatorId'
+      fullPath: '/donate/$creatorId/'
+      preLoaderRoute: typeof DonateCreatorIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/donate/$creatorId/payment/$donationId': {
       id: '/donate/$creatorId/payment/$donationId'
-      path: '/payment/$donationId'
+      path: '/donate/$creatorId/payment/$donationId'
       fullPath: '/donate/$creatorId/payment/$donationId'
       preLoaderRoute: typeof DonateCreatorIdPaymentDonationIdRouteImport
-      parentRoute: typeof DonateCreatorIdRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface DonateCreatorIdRouteChildren {
-  DonateCreatorIdPaymentDonationIdRoute: typeof DonateCreatorIdPaymentDonationIdRoute
-}
-
-const DonateCreatorIdRouteChildren: DonateCreatorIdRouteChildren = {
-  DonateCreatorIdPaymentDonationIdRoute: DonateCreatorIdPaymentDonationIdRoute,
-}
-
-const DonateCreatorIdRouteWithChildren = DonateCreatorIdRoute._addFileChildren(
-  DonateCreatorIdRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -374,7 +363,6 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   AlertsIdRoute: AlertsIdRoute,
   AlertsPresetsRoute: AlertsPresetsRoute,
-  DonateCreatorIdRoute: DonateCreatorIdRouteWithChildren,
   DonationsHistoryRoute: DonationsHistoryRoute,
   DonationsSettingsRoute: DonationsSettingsRoute,
   OverlaysIdRoute: OverlaysIdRoute,
@@ -383,6 +371,8 @@ const rootRouteChildren: RootRouteChildren = {
   AudioIndexRoute: AudioIndexRoute,
   DonationsIndexRoute: DonationsIndexRoute,
   OverlaysIndexRoute: OverlaysIndexRoute,
+  DonateCreatorIdIndexRoute: DonateCreatorIdIndexRoute,
+  DonateCreatorIdPaymentDonationIdRoute: DonateCreatorIdPaymentDonationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
