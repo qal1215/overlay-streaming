@@ -14,9 +14,8 @@ function DonationSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<any>(null)
   
-  const [generatedSecret, setGeneratedSecret] = useState<string | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
-  const [copiedSecret, setCopiedSecret] = useState(false)
+  const [sepaySecret, setSepaySecret] = useState("")
 
   const [testAlertData, setTestAlertData] = useState({
     name: 'Test User',
@@ -45,7 +44,7 @@ function DonationSettingsPage() {
 
   useEffect(() => {
     try {
-      apiClient.get(`/admin/creator/${creatorId}/donation-settings`)
+      apiClient.get(`/api/admin/creator/${creatorId}/donation-settings`)
         .then(data => {
           setSettings(data || defaultSettings)
           setLoading(false)
@@ -65,7 +64,7 @@ function DonationSettingsPage() {
   const handleTestAlert = async () => {
     setTestStatus('Testing...')
     try {
-      const res = await fetch(`${API_URL}/admin/creator/qal1215/test-alert`, {
+      const res = await fetch(`${API_URL}/api/admin/creator/qal1215/test-alert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,11 +93,16 @@ function DonationSettingsPage() {
     // In a real app, we'd grab values from controlled inputs.
     // For MVP, we assume the state is already updated via onChange.
     try {
-      await apiClient.patch(`/admin/creator/${creatorId}/donation-settings`, {
+      await apiClient.patch(`/api/admin/creator/${creatorId}/donation-settings`, {
         creatorId,
         donationSettings: settings.donationSettings,
-        paymentAccount: settings.paymentAccount
+        paymentAccount: settings.paymentAccount,
+        ...(sepaySecret && { sepayWebhookSecret: sepaySecret })
       });
+      if (sepaySecret) {
+        setSettings({...settings, sepayWebhookConfigured: true});
+        setSepaySecret("");
+      }
       alert('Saved successfully!');
     } catch (_e) {
       alert('Failed to save');
@@ -107,25 +111,11 @@ function DonationSettingsPage() {
     }
   }
 
-  const handleGenerateSecret = async () => {
-    if (!confirm('This will replace your current secret. Are you sure?')) return;
-    
-    try {
-      const data: any = await apiClient.post(`/admin/creator/${creatorId}/donation-settings/generate-sepay-secret`, {});
-      if (data.secret) {
-        setGeneratedSecret(data.secret);
-        setSettings({ ...settings, sepayWebhookConfigured: true });
-      }
-    } catch (_e) {
-      alert('Failed to generate secret');
-    }
-  }
-
   const handleRotateWebhookUrl = async () => {
     if (!confirm('This will immediately invalidate your old webhook URL. Are you sure?')) return;
     
     try {
-      const data: any = await apiClient.post(`/admin/creator/${creatorId}/donation-settings/rotate-sepay-webhook-url`, {});
+      const data: any = await apiClient.post(`/api/admin/creator/${creatorId}/donation-settings/rotate-sepay-webhook-url`, {});
       if (data.webhookUrl) {
         setSettings({ ...settings, sepayWebhookUrl: data.webhookUrl });
         alert('Webhook URL rotated successfully');
@@ -240,32 +230,14 @@ function DonationSettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1">Webhook Secret</label>
-                {generatedSecret ? (
-                  <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg mb-4">
-                    <p className="text-green-400 text-sm font-bold mb-2">Store this secret securely. It will not be shown again.</p>
-                    <div className="flex space-x-2">
-                      <input type="text" readOnly value={generatedSecret} className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white font-mono text-sm" />
-                      <button onClick={() => { navigator.clipboard.writeText(generatedSecret); setCopiedSecret(true); setTimeout(() => setCopiedSecret(false), 2000); }} className="px-4 py-2 bg-surface border border-white/10 rounded-lg hover:bg-white/5 transition-colors">
-                        {copiedSecret ? <Check size={18} className="text-green-400" /> : <Copy size={18} className="text-white" />}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between p-4 bg-black/30 border border-white/5 rounded-lg mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${settings.sepayWebhookConfigured ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                        <Key size={18} />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">{settings.sepayWebhookConfigured ? 'Configured' : 'Not configured'}</p>
-                        <p className="text-text-muted text-xs">A secret is required to verify SePay payments</p>
-                      </div>
-                    </div>
-                    <button onClick={handleGenerateSecret} type="button" className="px-4 py-2 bg-surface border border-white/10 rounded-lg text-white text-sm hover:bg-white/5 transition-colors">
-                      {settings.sepayWebhookConfigured ? 'Rotate Secret' : 'Generate Secret'}
-                    </button>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <input type="password" 
+                    value={sepaySecret}
+                    onChange={e => setSepaySecret(e.target.value)}
+                    placeholder={settings.sepayWebhookConfigured ? "•••••••••••••••• (Configured. Enter to update)" : "Enter secret from SePay..."}
+                    className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  <p className="text-xs text-text-muted">Paste the API Token or Webhook Secret provided by SePay.</p>
+                </div>
               </div>
             </div>
           </div>

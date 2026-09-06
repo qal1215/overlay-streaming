@@ -15,7 +15,7 @@ function DonationsDashboardPage() {
   useEffect(() => {
     try {
       const headers = getAdminAuthHeaders();
-      apiClient.get(`/admin/creator/${creatorId}/donations?limit=3`, headers)
+      apiClient.get(`/api/admin/creator/${creatorId}/donations?limit=3`, headers)
         .then(resData => {
           setData(resData);
           setLoading(false);

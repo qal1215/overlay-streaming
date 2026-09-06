@@ -180,37 +180,7 @@ creatorSettingsRouter.patch("/donation-settings", async (c) => {
   return c.json({ success: true });
 });
 
-// Generate/Rotate SePay Secret
-creatorSettingsRouter.post("/donation-settings/generate-sepay-secret", async (c) => {
-  const creatorId = c.req.param("id")!;
 
-  // Generate 32-byte secret
-  const randomBytes = crypto.getRandomValues(new Uint8Array(32));
-  const newSecret = "sk_live_" + Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-
-  try {
-    const encryptor = new SecretEncryptionService(c.env.PLATFORM_ENCRYPTION_KEY);
-    const encryptedSecret = await encryptor.encrypt(newSecret);
-
-    await c.env.DB.prepare(`
-      INSERT INTO creator_donation_settings (
-        creator_id, sepay_webhook_secret, updated_at
-      ) VALUES (
-        ?, ?, CURRENT_TIMESTAMP
-      )
-      ON CONFLICT(creator_id) DO UPDATE SET
-        sepay_webhook_secret = excluded.sepay_webhook_secret,
-        updated_at = CURRENT_TIMESTAMP
-    `).bind(creatorId, encryptedSecret).run();
-
-    return c.json({
-      secret: newSecret,
-      warning: "Store this secret securely. It will not be shown again."
-    });
-  } catch (e: any) {
-    return c.json({ error: e.message || "Failed to generate and save secret" }, 500);
-  }
-});
 
 // Rotate Webhook URL
 creatorSettingsRouter.post("/donation-settings/rotate-sepay-webhook-url", async (c) => {

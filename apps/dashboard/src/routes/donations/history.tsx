@@ -18,7 +18,7 @@ function DonationHistoryPage() {
     setLoading(true);
     try {
       const headers = getAdminAuthHeaders();
-      apiClient.get(`/admin/creator/${creatorId}/donations?status=${statusFilter}&limit=100`, headers)
+      apiClient.get(`/api/admin/creator/${creatorId}/donations?status=${statusFilter}&limit=100`, headers)
         .then(resData => {
           setData(resData);
           setLoading(false);
