@@ -15,16 +15,28 @@ export const getAdminAuthHeaders = () => {
   };
 };
 
+const getHeaders = (url: string, customHeaders?: HeadersInit) => {
+  let headers = { ...customHeaders };
+  if (url.startsWith('/api/admin') || url.startsWith('/admin')) {
+    try {
+      headers = { ...headers, ...getAdminAuthHeaders() };
+    } catch (e) {
+      console.warn("Could not attach admin auth headers:", e);
+    }
+  }
+  return headers;
+};
+
 export const apiClient = {
   get: async <T>(url: string, headers?: HeadersInit): Promise<T> => {
-    const res = await fetch(`${API_URL}${url}`, { headers });
+    const res = await fetch(`${API_URL}${url}`, { headers: getHeaders(url, headers) });
     if (!res.ok) throw new Error("API request failed");
     return res.json();
   },
   post: async <T>(url: string, data: any, headers?: HeadersInit): Promise<T> => {
     const res = await fetch(`${API_URL}${url}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
+      headers: { "Content-Type": "application/json", ...getHeaders(url, headers) },
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error("API request failed");
@@ -33,7 +45,7 @@ export const apiClient = {
   put: async <T>(url: string, data: any, headers?: HeadersInit): Promise<T> => {
     const res = await fetch(`${API_URL}${url}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", ...headers },
+      headers: { "Content-Type": "application/json", ...getHeaders(url, headers) },
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error("API request failed");
@@ -42,7 +54,7 @@ export const apiClient = {
   patch: async <T>(url: string, data: any, headers?: HeadersInit): Promise<T> => {
     const res = await fetch(`${API_URL}${url}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", ...headers },
+      headers: { "Content-Type": "application/json", ...getHeaders(url, headers) },
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error("API request failed");
@@ -51,7 +63,7 @@ export const apiClient = {
   delete: async <T>(url: string, headers?: HeadersInit): Promise<T> => {
     const res = await fetch(`${API_URL}${url}`, {
       method: "DELETE",
-      headers,
+      headers: getHeaders(url, headers),
     });
     if (!res.ok) throw new Error("API request failed");
     return res.json();

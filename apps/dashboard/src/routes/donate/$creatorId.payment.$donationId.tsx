@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { API_URL } from '../../../../api/client'
+import { API_URL } from '../../api/client'
 import { Loader2, Copy, CheckCircle2, AlertCircle } from 'lucide-react'
 
 export const Route = createFileRoute('/donate/$creatorId/payment/$donationId')({

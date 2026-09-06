@@ -94,6 +94,8 @@ CREATE TABLE alert_triggers (
   UNIQUE(creator_id, source, event_type)
 );
 
+DROP TABLE IF EXISTS donations;
+
 CREATE TABLE donations (
   id TEXT PRIMARY KEY,
   creator_id TEXT NOT NULL,
@@ -117,6 +119,8 @@ CREATE TABLE donations (
   UNIQUE(payment_provider, payment_reference),
   UNIQUE(payment_provider, provider_transaction_id)
 );
+
+DROP TABLE IF EXISTS creator_donation_settings;
 
 CREATE TABLE creator_donation_settings (
   creator_id TEXT PRIMARY KEY,
